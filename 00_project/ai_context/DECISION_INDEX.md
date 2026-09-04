@@ -30,6 +30,7 @@
 | DEC-024 | TASK-018 实现整改与 Unicode 传递 Feature 闭包 | 接受锁定版本的实际闭包：`unicode-normalization/default-features=false`，`tinyvec 1.6.0` 激活 `alloc + default(empty) + tinyvec_macros`，不启用 `std`；版本、Checksum 与 Lock 不变。仅针对 IIR 的 `IO-01～IO-07` 重开 C03 Retry，完成后只做增量再复审 | APPROVED | `HDP-APLS-019 Option A` | 2026-09-04 | Unicode 证据同步、TASK-018 精确实现整改与最小测试 |
 | DEC-025 | TASK-020 C05 验证范围 | 对 TASK-018 READY_FOR_REVIEW 候选执行最小风险驱动 C05：CNL-C001～C016 追溯、锁定普通构建/测试、公共候选资源边界和 Unicode 17.0.0 官方 NFC 一致性；官方数据仅下载至 `/private/tmp`。失败即返回 C00，不修改实现或测试 | APPROVED | `HDP-APLS-020 Option A` | 2026-09-04 | C05 验证、验证证据与后续正式 C04/Baseline 输入 |
 | DEC-026 | APLS 0.1 实现候选 Git Anchor | 创建一个本地初始 Commit，冻结当前 C05 PASS 的非忽略项目文件；排除 `07_src/target/` 等构建/本地数据；Commit Message 固定为 `chore: freeze APLS 0.1 implementation candidate`。不 Push、不建立 Baseline、不发起 Formal C04 | APPROVED | 项目负责人在唯一下一步上下文中明确“授权”、`HDP-APLS-021 Option A` | 2026-09-04 | Git 候选 Anchor 与后续正式 C04 Target 准备 |
+| DEC-027 | 私有远程同步与后续 AI 接管 | 创建 GitHub 私有仓库 `loocoo2025/apls-language`，同步本地 `main`，以正式 HANDOFF 将后续逻辑 C00 工作交给 Kimi；不授权 Formal C04、Baseline 或 Release | APPROVED | 项目负责人明确要求、`HDP-APLS-023` | 2026-09-04 | GitHub 私有远程、C00 物理会话交接 |
 
 ## 当前有效决定摘要
 
@@ -50,6 +51,7 @@
 - 当前实现整改：`DEC-024` 已接受 `tinyvec/default=[]` 的实际空 Feature 闭包，并仅授权 `IO-01～IO-07` 的 C03 Retry；不得借整改改变公开语言、IR 语义、资源数值、依赖版本或 CLI 命令集合。
 - 当前验证：`DEC-025` 已授权 TASK-020 只执行 T0/T1 风险驱动 C05、普通锁定验证、公共资源边界和 Unicode 17.0.0 官方一致性；失败时不得由 C05 修改实现或测试。
 - 候选冻结：`DEC-026` 已授权创建一个本地初始 Commit 作为当前 C05 PASS 候选的不可变 Git Anchor；该动作不授权 Push、正式 C04、Baseline 或 Release。
+- 远程与交接：`DEC-027` 授权 GitHub 私有同步和 Kimi C00 接管；这不构成 `HDP-APLS-022` 批准，Kimi C00 也不能在同一会话中冒充正式 C04。
 - 复审范围：`LEAN` 默认 `DELTA_ONLY`；已关闭且未变化、未受影响的事项继承结论，不因出现在完整 Target 中而重复审查。
 - 用户界面：用户默认不学习、不查看 DSL、AST 或 IR；只在主动检查/调试时展示 Normalized Meaning 或内部产物。
 - 详细设计：旧 Grammar、词法和 `apls-ir-0.1` 已被方向变更替代，仅保留为 Legacy DSL 参考；当前 CNL-to-IR 契约为 `apls-cnl-ir-0.1`。

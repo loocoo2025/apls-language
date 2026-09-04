@@ -7,7 +7,7 @@
 - Baseline ID：`APLS-BASELINE-NOT-ESTABLISHED`
 - Baseline Status：`DRAFT`
 - 产品版本：`0.1.0-draft`
-- Project Git Anchor：`MISSING — Git 已初始化，但尚无 Commit`
+- Project Git Anchor：`3289037bee1aab64dfa2d58188379a68dcfa601e`（C05 PASS 候选 Anchor，尚未正式 C04/Baseline Adoption）
 - 建立日期：`2026-09-02`
 
 当前没有可声明为 `CURRENT` 的 APLS 产品 Baseline。需求、语言规范、Canonical IR、编译器实现和测试均处于未建立或候选状态。
@@ -33,8 +33,8 @@
 | 系统需求 | NOT_ESTABLISHED | 未建立 |
 | 语言规范 | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/language/APLS_0.1_ZH_CN_LANGUAGE_PROFILE.md`、`APLS_0.1_ZH_CN_GRAMMAR.ebnf` |
 | Canonical IR | APPROVED_CNL_DESIGN_INPUT_NOT_BASELINED | `04_design/ir/APLS_0.1_CNL_CANONICAL_IR.md`、`04_design/ir/apls-cnl-ir-0.1.schema.json` |
-| 编译器实现 | PRE_DEC_014_LEGACY_DSL_PROTOTYPE_NOT_BASELINED | `07_src/` |
-| 测试与一致性套件 | NOT_ESTABLISHED | 未建立 |
+| 编译器实现 | CNL_IMPLEMENTATION_C05_VERIFIED_COMMIT_ANCHORED_NOT_BASELINED | `07_src/`、Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` |
+| 测试与一致性套件 | C05_VERIFIED_NOT_BASELINED | `06_test_design/APLS_0.1_CNL_IMPLEMENTATION_VERIFICATION_PLAN.md`、`11_validation/validation_reports/TASK020_C05_CNL_VERIFICATION.md` |
 | 总体架构 | CNL_CHANGE_INTEGRATED_NOT_BASELINED | `03_architecture/system_architecture.md` |
 | CNL 扩展架构 | UPDATED_BY_DEC017_NOT_BASELINED | `03_architecture/APLS_0.1_CONTROLLED_NATURAL_LANGUAGE_ARCHITECTURE.md` |
 | CNL 歧义边界 | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/language/APLS_0.1_CNL_AMBIGUITY_BOUNDARY.md` |

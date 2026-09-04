@@ -22,7 +22,9 @@
 | TASK-018 | CNL_FRONTEND_FRAME_IR_IMPLEMENTATION | C03 | DEC-010、DEC-011、DEC-014～DEC-020、DEC-023、DEC-024、WP-APLS-CNL-C03-001 | 完整简体中文 CNL Frontend、候选收敛、Canonical Frame、`apls-cnl-ir-0.1`、失败关闭 Pipeline/CLI 与最小定向测试 | DONE |
 | TASK-019 | CNL_PREIMPLEMENTATION_CONTRACT_CLOSURE | C02 | IIR-APLS-TASK018-PREIMPL-001、IIR-APLS-TASK019-REREVIEW-001/002/003、DEC-014～DEC-023 | 关闭 BF-02～BF-10、NF-01～NF-05，形成一致语言/Frame/IR/资源/NFC/诊断契约候选与新 Target | DONE |
 | TASK-020 | CNL_IMPLEMENTATION_VERIFICATION | C05 | TASK-018 READY_FOR_REVIEW、IIR-APLS-TASK018-IMPLEMENTATION-003、CNL-C001～C016、DEC-025 | 风险驱动验证计划、锁定构建/测试、资源与 Unicode 一致性证据、剩余风险和验证结论 | DONE |
-| TASK-021 | IMMUTABLE_CANDIDATE_COMMIT | C00 | TASK-018/TASK-020 DONE、DEC-026 | 一个本地初始 Commit、精确 Commit Hash、staged set 和禁止对象核验 | IN_PROGRESS |
+| TASK-021 | IMMUTABLE_CANDIDATE_COMMIT | C00 | TASK-018/TASK-020 DONE、DEC-026 | 一个本地初始 Commit、精确 Commit Hash、staged set 和禁止对象核验 | DONE |
+| TASK-022 | INITIAL_FORMAL_C04 | C04 | 精确 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e`、C05 PASS、HDP-APLS-022 | 首次正式 C04 Review Record 与 Gate Decision | READY |
+| TASK-023 | PRIVATE_GITHUB_SYNC_AND_KIMI_HANDOFF | C00 | 用户明确授权、Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` | GitHub 私有仓库、同步 `main`、Kimi C00 HANDOFF 与启动指令 | IN_PROGRESS |
 
 允许状态：`TODO → READY → IN_PROGRESS → OUTPUT_READY → READY_FOR_REVIEW → DONE`，以及受控的 `BLOCKED / CANCELLED` 分支。
 
@@ -243,3 +245,5 @@
 > `VAL-APLS-C05-020 = PASS`：普通 Compiler 24/CLI 7 项、Rust 1.98/1.86 锁定检查、公共候选资源边界和 Unicode 17.0.0 官方全量一致性全部通过；74 个受保护设计/源码/测试文件前后摘要一致。C00 已将 TASK-018 与 TASK-020 收口为 `DONE`，但产品 Baseline、正式 C04 和 Release 仍未完成。
 
 > 项目负责人已授权当前唯一下一步；`HDP-APLS-021 Option A / DEC-026` 只允许创建一个本地初始 Commit 冻结当前 C05 PASS 候选。构建缓存已通过 `.gitignore` 排除，不授权 Push、Formal C04、Baseline 或 Release。
+
+> TASK-021 已完成：本地初始 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e`、Tree `51edf42da73237bcb3408e234d2cbb2095758fa1`，共 249 个文件；`07_src/target/` 未进入 Commit。该 Anchor 尚未经过正式 C04，也未采用为产品 Baseline。

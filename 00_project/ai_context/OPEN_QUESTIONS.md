@@ -24,5 +24,6 @@
 | Q-020 | P1 | 是否接受 `tinyvec 1.6.0` 实际激活的空 `default` Feature，并仅针对 IO-01～IO-07 重开 TASK-018 C03 Retry？ | 依赖批准证据真实性、TASK-018 实现闭包和后续独立再复审 | HUMAN_PROJECT_OWNER | CLOSED — HDP-APLS-019 OPTION A / DEC-024 |
 | Q-021 | P1 | 是否批准 TASK-020 按最小风险驱动范围执行 C05 验证，并获取 Unicode 17.0.0 官方一致性数据？ | 是否形成实现候选的验证证据并为后续正式 C04/Baseline 准备输入 | HUMAN_PROJECT_OWNER | CLOSED — HDP-APLS-020 OPTION A / DEC-025 |
 | Q-022 | P1 | 是否授权为当前 C05 PASS 候选创建本地初始 Commit Anchor？ | 是否形成可用于后续正式 C04 的不可变 Git Target | HUMAN_PROJECT_OWNER | CLOSED — HUMAN AUTHORIZATION / HDP-APLS-021 OPTION A / DEC-026 |
+| Q-023 | P1 | 是否批准以 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` 为精确 Target 发起首次正式 C04？ | 是否形成产品 Baseline Adoption 前必需的正式独立 Gate 结论 | HUMAN_PROJECT_OWNER | OPEN — HDP-APLS-022 |
 
-`Q-015` 已由 `HDP-APLS-014 Option A` 关闭；`Q-007/Q-016` 已由 `HDP-APLS-015 Option A` / `DEC-019` 关闭；`Q-017` 已由 `HDP-APLS-016 Option A` / `DEC-020` 关闭；`Q-018` 已由 `HDP-APLS-017 Option A` / `DEC-021` 关闭；`Q-019` 已由 `HDP-APLS-018 Option A` / `DEC-023` 关闭；`Q-020` 已由 `HDP-APLS-019 Option A` / `DEC-024` 关闭；`Q-021` 已由 `HDP-APLS-020 Option A` / `DEC-025` 关闭；`Q-022` 已由项目负责人明确授权及 `DEC-026` 关闭。当前无 P0/P1 未决问题。
+`Q-015` 已由 `HDP-APLS-014 Option A` 关闭；`Q-007/Q-016` 已由 `HDP-APLS-015 Option A` / `DEC-019` 关闭；`Q-017` 已由 `HDP-APLS-016 Option A` / `DEC-020` 关闭；`Q-018` 已由 `HDP-APLS-017 Option A` / `DEC-021` 关闭；`Q-019` 已由 `HDP-APLS-018 Option A` / `DEC-023` 关闭；`Q-020` 已由 `HDP-APLS-019 Option A` / `DEC-024` 关闭；`Q-021` 已由 `HDP-APLS-020 Option A` / `DEC-025` 关闭；`Q-022` 已由项目负责人明确授权及 `DEC-026` 关闭。当前 P1 未决问题为 `Q-023`。
