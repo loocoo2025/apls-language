@@ -1,0 +1,546 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apls.dev/schema/apls-cnl-ir-0.1.schema.json",
+  "title": "APLS Simplified Chinese CNL Canonical IR 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "header",
+    "source_manifest",
+    "entities",
+    "units",
+    "properties",
+    "actions",
+    "events",
+    "surface_aliases",
+    "state_models",
+    "rules",
+    "transitions",
+    "invariants",
+    "acceptance",
+    "informative_items",
+    "source_map"
+  ],
+  "properties": {
+    "header": { "$ref": "#/$defs/header" },
+    "source_manifest": { "$ref": "#/$defs/sourceManifest" },
+    "entities": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/entity" } },
+    "units": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/unit" } },
+    "properties": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/property" } },
+    "actions": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/actionDeclaration" } },
+    "events": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/event" } },
+    "surface_aliases": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/surfaceAlias" } },
+    "state_models": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/stateModel" } },
+    "rules": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/rule" } },
+    "transitions": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/transition" } },
+    "invariants": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/invariant" } },
+    "acceptance": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/acceptance" } },
+    "informative_items": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/informativeItem" } },
+    "source_map": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sourceMapEntry" } }
+  },
+  "$defs": {
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language_profile",
+        "ir_schema_version",
+        "canonicalization_profile",
+        "compiler_id",
+        "compiler_version",
+        "unicode_data_version",
+        "unicode_normalization",
+        "semantic_hash_algorithm",
+        "semantic_hash",
+        "status"
+      ],
+      "properties": {
+        "language_profile": { "const": "apls-zh-CN-0.1" },
+        "ir_schema_version": { "const": "apls-cnl-ir-0.1" },
+        "canonicalization_profile": { "const": "APLS-CNL-C14N-0.1" },
+        "compiler_id": { "type": "string", "minLength": 1 },
+        "compiler_version": { "type": "string", "minLength": 1 },
+        "unicode_data_version": { "const": "17.0.0" },
+        "unicode_normalization": { "const": "NFC" },
+        "semantic_hash_algorithm": { "const": "sha256" },
+        "semantic_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "status": { "const": "verified" }
+      }
+    },
+    "semanticId": {
+      "type": "string",
+      "pattern": "^(?:builtin|entity|property|unit|event|action|state-model|state|alias|rule|transition|invariant|acceptance|info):[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "entityId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^entity:.+$" }] },
+    "propertyId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^property:.+$" }] },
+    "unitId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^unit:.+$" }] },
+    "eventId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^event:.+$" }] },
+    "actionId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^action:.+:.+$" }] },
+    "stateModelId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^state-model:.+$" }] },
+    "stateId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^state:.+:.+$" }] },
+    "aliasId": { "allOf": [{ "$ref": "#/$defs/semanticId" }, { "pattern": "^alias:(?:entity|property|action|event|unit):.+$" }] },
+    "actorId": {
+      "anyOf": [
+        { "const": "builtin:system" },
+        { "$ref": "#/$defs/entityId" }
+      ]
+    },
+    "sourceId": {
+      "type": "string",
+      "pattern": "^source:[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "dimensionId": {
+      "type": "string",
+      "pattern": "^dimension:[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[\\u3400-\\u4DBF\\u4E00-\\u9FFFA-Za-z][\\u3400-\\u4DBF\\u4E00-\\u9FFFA-Za-z0-9_\\-·]{0,63}$"
+    },
+    "decimal": {
+      "type": "string",
+      "pattern": "^(?:0(?:\\.[0-9]*[1-9])?|[1-9][0-9]*(?:\\.[0-9]*[1-9])?|-(?:0\\.[0-9]*[1-9]|[1-9][0-9]*(?:\\.[0-9]*[1-9])?))$"
+    },
+    "integer": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*|-[1-9][0-9]*)$"
+    },
+    "sourceManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/$defs/sourceFile" }
+        }
+      }
+    },
+    "sourceFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "logical_path", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/sourceId" },
+        "logical_path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_byte", "end_byte"],
+      "properties": {
+        "start_byte": { "type": "integer", "minimum": 0 },
+        "end_byte": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "roleSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "span"],
+      "properties": {
+        "role": {
+          "enum": [
+            "sentence",
+            "name",
+            "entity_kind",
+            "value_type",
+            "observable",
+            "writable",
+            "unit",
+            "alias",
+            "target_kind",
+            "target",
+            "owner",
+            "state",
+            "initial_state",
+            "condition",
+            "condition_left",
+            "condition_operator",
+            "condition_right",
+            "condition_entity",
+            "condition_state",
+            "condition_receiver",
+            "condition_event",
+            "modality",
+            "behavior",
+            "behavior_actor",
+            "behavior_action",
+            "behavior_target",
+            "trigger",
+            "trigger_left",
+            "trigger_operator",
+            "trigger_right",
+            "trigger_entity",
+            "trigger_state",
+            "trigger_receiver",
+            "trigger_event",
+            "entity",
+            "source_state",
+            "target_state",
+            "scope",
+            "required_state",
+            "required_state_entity",
+            "required_state_state",
+            "expected",
+            "expected_left",
+            "expected_operator",
+            "expected_right",
+            "expected_entity",
+            "expected_state",
+            "expected_receiver",
+            "expected_event",
+            "deadline",
+            "text"
+          ]
+        },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "sentence_span", "role_spans"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/sourceId" },
+        "sentence_span": { "$ref": "#/$defs/span" },
+        "role_spans": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/roleSpan" }
+        }
+      }
+    },
+    "sourceMapEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["semantic_id", "ir_pointer", "provenance"],
+      "properties": {
+        "semantic_id": { "$ref": "#/$defs/semanticId" },
+        "ir_pointer": { "type": "string", "pattern": "^/" },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/provenance" }
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "entity_kind"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entityId" },
+        "display_name": { "$ref": "#/$defs/displayName" },
+        "entity_kind": { "enum": ["device", "component", "sensor", "actuator"] }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display_name",
+        "unit_kind",
+        "dimension_id",
+        "canonical_unit_ref",
+        "scale",
+        "offset"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/unitId" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "unit_kind": { "enum": ["builtin", "nominal"] },
+        "dimension_id": { "$ref": "#/$defs/dimensionId" },
+        "canonical_unit_ref": { "$ref": "#/$defs/unitId" },
+        "scale": { "$ref": "#/$defs/decimal" },
+        "offset": { "$ref": "#/$defs/decimal" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "unit_kind": { "const": "nominal" } }, "required": ["unit_kind"] },
+          "then": {
+            "properties": {
+              "dimension_id": { "type": "string", "pattern": "^dimension:nominal:.+$" },
+              "scale": { "const": "1" },
+              "offset": { "const": "0" }
+            }
+          }
+        }
+      ]
+    },
+    "property": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "value_type", "observable", "writable", "unit_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/propertyId" },
+        "display_name": { "$ref": "#/$defs/displayName" },
+        "value_type": { "enum": ["boolean", "integer", "decimal", "percentage", "text", "duration"] },
+        "observable": { "type": "boolean" },
+        "writable": { "type": "boolean" },
+        "unit_ref": {
+          "anyOf": [
+            { "$ref": "#/$defs/unitId" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "actionDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "target_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/actionId" },
+        "display_name": { "$ref": "#/$defs/displayName" },
+        "target_ref": { "$ref": "#/$defs/entityId" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/eventId" },
+        "display_name": { "$ref": "#/$defs/displayName" }
+      }
+    },
+    "surfaceAlias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "target_kind", "target_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/aliasId" },
+        "display_name": { "$ref": "#/$defs/displayName" },
+        "target_kind": { "enum": ["entity", "property", "action", "event", "unit"] },
+        "target_ref": { "$ref": "#/$defs/semanticId" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stateId" },
+        "display_name": { "$ref": "#/$defs/displayName" }
+      }
+    },
+    "stateModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner_ref", "states", "initial_state_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stateModelId" },
+        "owner_ref": { "$ref": "#/$defs/entityId" },
+        "states": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/state" }
+        },
+        "initial_state_ref": { "$ref": "#/$defs/stateId" }
+      }
+    },
+    "booleanLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "boolean" },
+        "value": { "type": "boolean" }
+      }
+    },
+    "integerLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "integer" },
+        "value": { "$ref": "#/$defs/integer" }
+      }
+    },
+    "decimalLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "decimal" },
+        "value": { "$ref": "#/$defs/decimal" }
+      }
+    },
+    "textLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "text" },
+        "value": { "type": "string" }
+      }
+    },
+    "quantityLiteral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "numeric_type", "value", "dimension_id", "canonical_unit_ref"],
+      "properties": {
+        "kind": { "const": "quantity" },
+        "numeric_type": { "enum": ["integer", "decimal"] },
+        "value": { "$ref": "#/$defs/decimal" },
+        "dimension_id": { "$ref": "#/$defs/dimensionId" },
+        "canonical_unit_ref": { "$ref": "#/$defs/unitId" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "numeric_type": { "const": "integer" } }, "required": ["numeric_type"] },
+          "then": { "properties": { "value": { "$ref": "#/$defs/integer" } } }
+        }
+      ]
+    },
+    "typedLiteral": {
+      "oneOf": [
+        { "$ref": "#/$defs/booleanLiteral" },
+        { "$ref": "#/$defs/integerLiteral" },
+        { "$ref": "#/$defs/decimalLiteral" },
+        { "$ref": "#/$defs/textLiteral" },
+        { "$ref": "#/$defs/quantityLiteral" }
+      ]
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "property_ref", "operator", "right"],
+      "properties": {
+        "kind": { "const": "comparison" },
+        "property_ref": { "$ref": "#/$defs/propertyId" },
+        "operator": { "enum": ["eq", "ne", "lt", "le", "gt", "ge"] },
+        "right": { "$ref": "#/$defs/typedLiteral" }
+      }
+    },
+    "statePredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "entity_ref", "state_ref"],
+      "properties": {
+        "kind": { "const": "state_predicate" },
+        "entity_ref": { "$ref": "#/$defs/entityId" },
+        "state_ref": { "$ref": "#/$defs/stateId" }
+      }
+    },
+    "eventReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "receiver_ref", "event_ref"],
+      "properties": {
+        "kind": { "const": "event_receipt" },
+        "receiver_ref": { "$ref": "#/$defs/actorId" },
+        "event_ref": { "$ref": "#/$defs/eventId" }
+      }
+    },
+    "atomicCondition": {
+      "oneOf": [
+        { "$ref": "#/$defs/comparison" },
+        { "$ref": "#/$defs/statePredicate" },
+        { "$ref": "#/$defs/eventReceipt" }
+      ]
+    },
+    "conjunction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "items"],
+      "properties": {
+        "kind": { "const": "conjunction" },
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/atomicCondition" }
+        }
+      }
+    },
+    "condition": {
+      "oneOf": [
+        { "$ref": "#/$defs/atomicCondition" },
+        { "$ref": "#/$defs/conjunction" }
+      ]
+    },
+    "actionInvocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_ref", "action_ref", "target_ref"],
+      "properties": {
+        "actor_ref": { "$ref": "#/$defs/actorId" },
+        "action_ref": { "$ref": "#/$defs/actionId" },
+        "target_ref": { "$ref": "#/$defs/entityId" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "condition", "modality", "behavior"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rule:sha256:[a-f0-9]{64}$" },
+        "condition": { "$ref": "#/$defs/condition" },
+        "modality": { "enum": ["require", "prohibit"] },
+        "behavior": { "$ref": "#/$defs/actionInvocation" }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "trigger", "entity_ref", "source_state_ref", "target_state_ref"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^transition:sha256:[a-f0-9]{64}$" },
+        "trigger": { "$ref": "#/$defs/condition" },
+        "entity_ref": { "$ref": "#/$defs/entityId" },
+        "source_state_ref": { "$ref": "#/$defs/stateId" },
+        "target_state_ref": { "$ref": "#/$defs/stateId" }
+      }
+    },
+    "invariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "condition", "required_state"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^invariant:sha256:[a-f0-9]{64}$" },
+        "scope": { "const": "safety" },
+        "condition": { "$ref": "#/$defs/condition" },
+        "required_state": { "$ref": "#/$defs/statePredicate" }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "trigger", "expected", "deadline"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^acceptance:sha256:[a-f0-9]{64}$" },
+        "trigger": { "$ref": "#/$defs/condition" },
+        "expected": { "$ref": "#/$defs/condition" },
+        "deadline": { "$ref": "#/$defs/quantityLiteral" }
+      }
+    },
+    "informativeItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "classification", "kind", "text", "subject_ref"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^info:sha256:[a-f0-9]{64}$" },
+        "classification": { "const": "informative" },
+        "kind": { "const": "note" },
+        "text": { "type": "string" },
+        "subject_ref": {
+          "anyOf": [
+            { "$ref": "#/$defs/semanticId" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

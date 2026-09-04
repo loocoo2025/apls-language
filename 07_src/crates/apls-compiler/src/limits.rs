@@ -1,0 +1,9 @@
+pub const MAX_SOURCE_BYTES: usize = 1_048_576;
+pub const MAX_SOURCE_GRAPH_BYTES: usize = 16_777_216;
+pub const MAX_SOURCE_FILES: usize = 256;
+pub const MAX_IMPORT_DEPTH: usize = 32;
+pub const MAX_TOKENS: usize = 1_000_000;
+pub const MAX_AST_NODES: usize = 1_000_000;
+pub const MAX_EXPRESSION_DEPTH: usize = 128;
+pub const MAX_DIAGNOSTICS: usize = 1_000;
+pub const MAX_CANONICAL_IR_BYTES: usize = 33_554_432;

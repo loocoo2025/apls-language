@@ -1,0 +1,532 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apls.dev/schema/ir/0.1",
+  "title": "APLS Canonical IR 0.1 Approved Design Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "header", "source_manifest", "symbols", "dimensions", "units", "types",
+    "domains", "components", "operations", "transports", "execution_units", "events", "channels",
+    "state_machines", "rules", "constraints", "acceptance",
+    "knowledge_items", "source_map"
+  ],
+  "properties": {
+    "header": { "$ref": "#/$defs/header" },
+    "source_manifest": { "$ref": "#/$defs/sourceManifest" },
+    "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
+    "dimensions": { "type": "array", "items": { "$ref": "#/$defs/dimension" } },
+    "units": { "type": "array", "items": { "$ref": "#/$defs/unit" } },
+    "types": { "type": "array", "items": { "$ref": "#/$defs/typeDef" } },
+    "domains": { "type": "array", "items": { "$ref": "#/$defs/domain" } },
+    "components": { "type": "array", "items": { "$ref": "#/$defs/namedNode" } },
+    "operations": { "type": "array", "items": { "$ref": "#/$defs/operation" } },
+    "transports": { "type": "array", "items": { "$ref": "#/$defs/transport" } },
+    "execution_units": { "type": "array", "items": { "$ref": "#/$defs/executionUnit" } },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "channels": { "type": "array", "items": { "$ref": "#/$defs/channel" } },
+    "state_machines": { "type": "array", "items": { "$ref": "#/$defs/stateMachine" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } },
+    "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+    "acceptance": { "type": "array", "items": { "$ref": "#/$defs/acceptance" } },
+    "knowledge_items": { "type": "array", "items": { "$ref": "#/$defs/knowledgeItem" } },
+    "source_map": {
+      "type": "object",
+      "propertyNames": { "pattern": "^/" },
+      "additionalProperties": { "$ref": "#/$defs/sourceSpan" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$" },
+    "decimal": {
+      "type": "string",
+      "pattern": "^(?:0(?:\\.[0-9]*[1-9])?|[1-9][0-9]*(?:\\.[0-9]*[1-9])?|-(?:0\\.[0-9]*[1-9]|[1-9][0-9]*(?:\\.[0-9]*[1-9])?))$"
+    },
+    "typeRef": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "primitive" },
+            "name": { "enum": ["bool", "int", "decimal", "string"] }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "target_ref"],
+          "properties": {
+            "kind": { "const": "named" },
+            "target_ref": { "$ref": "#/$defs/id" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "element"],
+          "properties": {
+            "kind": { "enum": ["list", "optional"] },
+            "element": { "$ref": "#/$defs/typeRef" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "dimension_ref", "unit_ref"],
+          "properties": {
+            "kind": { "const": "quantity" },
+            "dimension_ref": { "$ref": "#/$defs/id" },
+            "unit_ref": { "$ref": "#/$defs/id" }
+          }
+        }
+      ]
+    },
+    "dimension": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "base_unit_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "base_unit_ref": { "$ref": "#/$defs/id" }
+      }
+    },
+    "unit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "dimension_ref", "symbol", "scale", "offset"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "dimension_ref": { "$ref": "#/$defs/id" },
+        "symbol": { "type": "string", "minLength": 1 },
+        "scale": { "$ref": "#/$defs/decimal" },
+        "offset": { "$ref": "#/$defs/decimal" }
+      }
+    },
+    "domain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "model", "supports"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "model": { "enum": ["os", "rtos", "bare_metal", "managed_runtime"] },
+        "supports": {
+          "type": "array", "uniqueItems": true,
+          "items": { "enum": ["process", "thread", "task", "main_loop", "interrupt", "event_loop", "coroutine", "actor"] }
+        }
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "type_ref"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type_ref": { "$ref": "#/$defs/typeRef" }
+      }
+    },
+    "operation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "parameters", "return_type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["pure", "action"] },
+        "parameters": { "type": "array", "items": { "$ref": "#/$defs/parameter" } },
+        "return_type": { "anyOf": [{ "$ref": "#/$defs/typeRef" }, { "type": "null" }] }
+      }
+    },
+    "transport": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["in_process", "ipc", "network", "bus", "custom"] }
+      }
+    },
+    "header": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_version", "ir_schema_version", "compiler_id", "compiler_version", "spec_name", "spec_version", "canonicalization_profile", "status"],
+      "properties": {
+        "language_version": { "const": "0.1" },
+        "ir_schema_version": { "const": "0.1" },
+        "compiler_id": { "type": "string", "minLength": 1 },
+        "compiler_version": { "type": "string", "minLength": 1 },
+        "spec_name": { "$ref": "#/$defs/id" },
+        "spec_version": { "type": "string", "minLength": 1 },
+        "canonicalization_profile": { "const": "APLS-C14N-0.1" },
+        "status": { "const": "verified" }
+      }
+    },
+    "sourceManifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["files", "imports"],
+      "properties": {
+        "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sourceFile" } },
+        "imports": { "type": "array", "items": { "$ref": "#/$defs/import" } }
+      }
+    },
+    "sourceFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "import": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_file", "target_path", "alias"],
+      "properties": {
+        "source_file": { "$ref": "#/$defs/id" },
+        "target_path": { "type": "string" },
+        "alias": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" }
+      }
+    },
+    "symbol": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["type", "dimension", "unit", "domain", "component", "operation", "transport", "execution", "event", "channel", "state_machine", "state", "rule", "constraint", "safety", "acceptance"] },
+        "source": { "$ref": "#/$defs/sourceSpan" }
+      }
+    },
+    "typeDef": {
+      "oneOf": [
+        { "$ref": "#/$defs/aliasType" },
+        { "$ref": "#/$defs/enumType" },
+        { "$ref": "#/$defs/recordType" }
+      ]
+    },
+    "aliasType": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "target_type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "alias" },
+        "target_type": { "$ref": "#/$defs/typeRef" }
+      }
+    },
+    "enumType": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "enum_values"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "enum" },
+        "enum_values": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" }
+        }
+      }
+    },
+    "recordType": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "fields"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "record" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "field": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "type_ref", "default"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type_ref": { "$ref": "#/$defs/typeRef" },
+        "default": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }
+      }
+    },
+    "namedNode": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id"],
+      "properties": { "id": { "$ref": "#/$defs/id" } }
+    },
+    "executionUnit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "domain_ref", "owner_ref", "trigger", "schedule"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["process", "thread", "task", "main_loop", "interrupt", "event_loop", "coroutine", "actor"] },
+        "domain_ref": { "$ref": "#/$defs/id" },
+        "owner_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "trigger": { "$ref": "#/$defs/trigger" },
+        "schedule": { "$ref": "#/$defs/schedule" }
+      }
+    },
+    "trigger": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "source_ref", "period"],
+      "properties": {
+        "kind": { "enum": ["call", "event", "message", "timer", "interrupt", "state_change"] },
+        "source_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "period": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }
+      }
+    },
+    "schedule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "parameters"],
+      "properties": {
+        "kind": { "enum": ["periodic", "event_driven", "preemptive", "cooperative"] },
+        "parameters": { "type": "object", "additionalProperties": { "$ref": "#/$defs/expression" } }
+      }
+    },
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "payload_type", "source_ref"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "payload_type": { "anyOf": [{ "$ref": "#/$defs/typeRef" }, { "type": "null" }] },
+        "source_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+      }
+    },
+    "channel": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "from_ref", "to_ref", "payload_type", "mode", "transport_ref", "ordering", "delivery", "capacity", "timeout"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from_ref": { "$ref": "#/$defs/id" },
+        "to_ref": { "$ref": "#/$defs/id" },
+        "payload_type": { "$ref": "#/$defs/typeRef" },
+        "mode": { "enum": ["message", "event", "queue", "rpc", "stream"] },
+        "transport_ref": { "$ref": "#/$defs/id" },
+        "ordering": { "enum": ["fifo", "priority", "unordered"] },
+        "delivery": { "enum": ["at_most_once", "at_least_once", "exactly_once"] },
+        "capacity": { "type": ["integer", "null"], "minimum": 1 },
+        "timeout": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }
+      }
+    },
+    "stateMachine": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "initial_state_ref", "states", "transitions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "initial_state_ref": { "$ref": "#/$defs/id" },
+        "states": { "type": "array", "items": { "$ref": "#/$defs/state" } },
+        "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
+      }
+    },
+    "state": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "terminal"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "terminal": { "type": "boolean" } }
+    },
+    "transition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "from_ref", "event_ref", "to_ref", "guard", "priority", "actions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from_ref": { "$ref": "#/$defs/id" },
+        "event_ref": { "$ref": "#/$defs/id" },
+        "to_ref": { "$ref": "#/$defs/id" },
+        "guard": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] },
+        "priority": { "type": ["integer", "null"] },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+      }
+    },
+    "rule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "condition", "hold_for", "actions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "condition": { "$ref": "#/$defs/expression" },
+        "hold_for": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+      }
+    },
+    "constraint": {
+      "oneOf": [
+        { "$ref": "#/$defs/assertionConstraint" },
+        { "$ref": "#/$defs/safetyConstraint" }
+      ]
+    },
+    "assertionConstraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "class", "assertion"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "constraint" },
+        "class": { "enum": ["architecture", "performance", "resource"] },
+        "assertion": { "$ref": "#/$defs/expression" }
+      }
+    },
+    "safetyConstraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "condition", "prohibited_refs", "actions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "safety" },
+        "condition": { "$ref": "#/$defs/expression" },
+        "prohibited_refs": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+      }
+    },
+    "acceptance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "given", "when", "expect", "within"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "given": { "type": "array", "items": { "$ref": "#/$defs/binding" } },
+        "when": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "expect": { "$ref": "#/$defs/expression" },
+        "within": { "anyOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }
+      }
+    },
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type_ref", "value"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type_ref": { "$ref": "#/$defs/typeRef" },
+        "value": { "$ref": "#/$defs/expression" }
+      }
+    },
+    "knowledgeItem": {
+      "oneOf": [
+        { "$ref": "#/$defs/informativeKnowledge" },
+        { "$ref": "#/$defs/decisionKnowledge" },
+        { "$ref": "#/$defs/openKnowledge" },
+        { "$ref": "#/$defs/unknownKnowledge" }
+      ]
+    },
+    "informativeKnowledge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "classification", "kind", "text", "subject_ref", "decision_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "classification": { "const": "informative" },
+        "text": { "type": "string" },
+        "subject_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "kind": { "enum": ["intent", "responsibility", "rationale"] },
+        "decision_status": { "type": "null" }
+      }
+    },
+    "decisionKnowledge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "classification", "kind", "text", "subject_ref", "decision_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "classification": { "const": "informative" },
+        "kind": { "const": "decision" },
+        "text": { "type": "string" },
+        "subject_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "decision_status": { "enum": ["frozen", "approved"] }
+      }
+    },
+    "openKnowledge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "classification", "kind", "text", "subject_ref", "decision_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "classification": { "const": "open" },
+        "kind": { "const": "open" },
+        "text": { "type": "string" },
+        "subject_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "decision_status": { "type": "null" }
+      }
+    },
+    "unknownKnowledge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "classification", "kind", "text", "subject_ref", "decision_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "classification": { "const": "unknown" },
+        "kind": { "const": "unknown" },
+        "text": { "type": "string" },
+        "subject_ref": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "decision_status": { "type": "null" }
+      }
+    },
+    "expression": {
+      "oneOf": [
+        { "$ref": "#/$defs/literalExpr" },
+        { "$ref": "#/$defs/listExpr" },
+        { "$ref": "#/$defs/referenceExpr" },
+        { "$ref": "#/$defs/unaryExpr" },
+        { "$ref": "#/$defs/binaryExpr" },
+        { "$ref": "#/$defs/callExpr" }
+      ]
+    },
+    "literalExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "value"],
+      "properties": {
+        "kind": { "const": "literal" }, "result_type": { "$ref": "#/$defs/typeRef" },
+        "value": { "type": ["string", "boolean"] }
+      }
+    },
+    "listExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "elements"],
+      "properties": {
+        "kind": { "const": "list" },
+        "result_type": { "$ref": "#/$defs/typeRef" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/expression" } }
+      }
+    },
+    "referenceExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "target_ref"],
+      "properties": {
+        "kind": { "const": "reference" }, "result_type": { "$ref": "#/$defs/typeRef" },
+        "target_ref": { "$ref": "#/$defs/id" }
+      }
+    },
+    "unaryExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "operator", "operand"],
+      "properties": {
+        "kind": { "const": "unary" }, "result_type": { "$ref": "#/$defs/typeRef" },
+        "operator": { "enum": ["not", "negate"] }, "operand": { "$ref": "#/$defs/expression" }
+      }
+    },
+    "binaryExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "operator", "left", "right"],
+      "properties": {
+        "kind": { "const": "binary" }, "result_type": { "$ref": "#/$defs/typeRef" },
+        "operator": { "enum": ["or", "and", "eq", "ne", "lt", "le", "gt", "ge", "add", "sub", "mul", "div", "mod"] },
+        "left": { "$ref": "#/$defs/expression" }, "right": { "$ref": "#/$defs/expression" }
+      }
+    },
+    "callExpr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "result_type", "operation_ref", "arguments"],
+      "properties": {
+        "kind": { "const": "call" }, "result_type": { "$ref": "#/$defs/typeRef" },
+        "operation_ref": { "$ref": "#/$defs/id" },
+        "arguments": { "type": "object", "additionalProperties": { "$ref": "#/$defs/expression" } }
+      }
+    },
+    "action": {
+      "oneOf": [
+        { "$ref": "#/$defs/callAction" },
+        { "$ref": "#/$defs/transitionAction" }
+      ]
+    },
+    "callAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "ordinal", "target_ref", "arguments"],
+      "properties": {
+        "kind": { "enum": ["emit", "invoke"] },
+        "ordinal": { "type": "integer", "minimum": 0 },
+        "target_ref": { "$ref": "#/$defs/id" },
+        "arguments": { "type": "object", "additionalProperties": { "$ref": "#/$defs/expression" } }
+      }
+    },
+    "transitionAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "ordinal", "machine_ref", "state_ref"],
+      "properties": {
+        "kind": { "const": "transition" },
+        "ordinal": { "type": "integer", "minimum": 0 },
+        "machine_ref": { "$ref": "#/$defs/id" },
+        "state_ref": { "$ref": "#/$defs/id" }
+      }
+    },
+    "sourceSpan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["file_ref", "start_line", "start_column", "end_line", "end_column"],
+      "properties": {
+        "file_ref": { "$ref": "#/$defs/id" },
+        "start_line": { "type": "integer", "minimum": 1 },
+        "start_column": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": "integer", "minimum": 1 },
+        "end_column": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

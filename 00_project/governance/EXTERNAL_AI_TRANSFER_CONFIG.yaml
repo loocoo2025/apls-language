@@ -1,0 +1,101 @@
+schema_version: "1.0"
+
+# 本文件只维护外部 AI 调用与独立 Session 放置的当前配置值。
+# 固定 Role、Dynamic Role Profile、Interaction、通用 Authorization 和六维分离由 ROLE_INTERACTION_EXECUTION_POLICY.md 维护；
+# 执行槽位、权限继承和正式 C04 Finding/Decision 语义由 AI_ENGINEERING_RULES_V2.md 维护；
+# 机器必填字段与枚举由 GOVERNANCE_EXECUTION_CONTRACTS.yaml 维护；
+# Session 请求格式由 AI_CONVERSATION_ORCHESTRATION_RULES.md 维护；
+# 独立 Session 触发条件由 PROJECT_ASSURANCE_CADENCE_POLICY.md 维护。
+
+in_session_external_ai_calls:
+  enabled: false
+  result_classification: "AUXILIARY_ADVISORY_ONLY"
+  confirmation_mode: "CONFIRM_UNLESS_PREAUTHORIZED"
+  allow_silent_when_preauthorized: true
+  may_create_governance_role: false
+  may_produce_formal_c04_decision: false
+
+transfer_review:
+  applies_to: "EXTERNAL_INDEPENDENT_SESSION_TRANSFER"
+  preview_required: true
+  editable_before_send: true
+  cancel_available: true
+  explicit_confirmation_required: true
+
+independent_session_creation:
+  request_contract_ref: "AI_CONVERSATION_ORCHESTRATION_RULES.md#41.5"
+  request_schema_version: "1.2"
+  default_target: "CURRENT_AI_ENVIRONMENT"
+  default_project_binding: "CURRENT_PROJECT"
+  local_auto_create: true
+
+  external_target:
+    enabled: false
+    selection_mode: "MANUAL_ONLY"
+    selected_profile: null
+    automatic_fallback_from_local: false
+
+  allowed_reason_codes:
+    - "FORMAL_C04_INITIAL"
+    - "FORMAL_C04_REREVIEW"
+    - "EXPERT_ESCALATION_WITH_SELF_CONTAINED_PACKAGE"
+    - "INDEPENDENT_ADVISORY_ANALYSIS"
+    - "OTHER_PREAUTHORIZED_INDEPENDENT_SESSION"
+
+  authorization_policy:
+    capability_enablement_is_call_authorization: false
+    require_request_authorization_source: true
+    allowed_source_types:
+      - "PREAUTHORIZED_GATE"
+      - "EXPLICIT_CONFIRMATION"
+    required_validity: "ONE_INDEPENDENT_SESSION"
+    dispatch_limit: 1
+
+target_policy:
+  require_full_immutable_commit_for_formal_c04: true
+  allow_exact_historical_commit: true
+  allow_moving_head_only: false
+  require_applicable_baseline: true
+  require_review_purpose: true
+  require_retrievable_target: true
+  require_reproducible_target: true
+  stale_target_behavior: "STOP_AND_REISSUE_REQUEST"
+  clean_worktree_requirement: "PROJECT_POLICY"
+
+context_policy:
+  default_mode: "MINIMUM_NECESSARY"
+  independent_session_mode: "MINIMUM_SUFFICIENT_SELF_CONTAINED"
+  include_full_chat_history: false
+  include_private_reasoning: false
+  allow_executor_report_as_navigation: true
+  executor_report_may_predetermine_review: false
+
+budget:
+  timeout_seconds: null
+  max_input_tokens: null
+  max_output_tokens: null
+  max_context_items: null
+  on_budget_exceeded: "FAIL_CLOSED_AND_RETURN_TO_CALLER"
+
+retry_policy:
+  automatic_retry: false
+  retry_requires_new_authorization: true
+  one_dispatch_per_request_id: true
+
+concurrency:
+  isolation_scope: "PER_REQUEST_AND_PROJECT"
+  global_history_lock: false
+  active_request_serialization: "PROJECT_POLICY"
+
+permissions:
+  inherit_caller_scope: true
+  allow_scope_expansion: false
+  default_commit: false
+  default_push: false
+  default_pull_request: false
+  default_release: false
+  default_remote_mutation: false
+
+# 外部 Profile 如声明 Model / Runtime / Harness，只改变运行配置；不得改变 Role、Session 独立性或权限。
+
+external_profiles: {}

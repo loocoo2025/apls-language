@@ -1,0 +1,15 @@
+# ~/.codex/config.toml
+#
+# Conservative default configuration for local development.
+# Keep the agent writable inside the current workspace, keep network access
+# disabled by default, and ask for approval when the agent wants to step
+# outside the normal sandbox.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+# Keep normal answers terse. Remove this line if you prefer more verbose output.
+model_verbosity = "low"
+
+[sandbox_workspace_write]
+network_access = false

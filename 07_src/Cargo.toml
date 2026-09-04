@@ -1,0 +1,29 @@
+[workspace]
+members = [
+    "crates/apls-compiler",
+    "crates/apls-cli",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.86"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+lalrpop = { version = "=0.23.1", default-features = false }
+lalrpop-util = { version = "=0.23.1", default-features = false, features = ["std"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.151", features = ["arbitrary_precision"] }
+clap = { version = "=4.6.6", default-features = false, features = ["std", "help", "usage", "error-context", "derive"] }
+jsonschema = { version = "=0.52.1", default-features = false, features = ["arbitrary-precision"] }
+sha2 = { version = "=0.11.0", default-features = false }
+num-bigint = { version = "=0.5.1" }
+num-traits = { version = "=0.2.19" }
+tempfile = { version = "=3.27.0" }
+unicode-normalization = { version = "=0.1.25", default-features = false }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

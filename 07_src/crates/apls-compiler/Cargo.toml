@@ -1,0 +1,24 @@
+[package]
+name = "apls-compiler"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+build = "build.rs"
+
+[dependencies]
+lalrpop-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+jsonschema.workspace = true
+sha2.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+unicode-normalization.workspace = true
+
+[build-dependencies]
+lalrpop.workspace = true
+
+[lints]
+workspace = true

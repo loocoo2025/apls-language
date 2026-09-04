@@ -1,0 +1,354 @@
+schema_version: "1.0"
+framework_version: "v0.1.5"
+release_status: "STABLE"
+semantic_authority: "00_project/governance/ROLE_INTERACTION_EXECUTION_POLICY.md"
+
+role_system:
+  fixed_role_ids:
+    - "C00"
+    - "C01"
+    - "C02"
+    - "C03"
+    - "C04"
+    - "C05"
+    - "C06"
+  separation_rule:
+    - "ROLE"
+    - "MODEL"
+    - "RUNTIME"
+    - "HARNESS"
+    - "SESSION"
+    - "TOOL"
+
+dynamic_role_profile:
+  contract_id: "DYNAMIC_ROLE_PROFILE"
+  required_fields:
+    - "profile_id"
+    - "schema_version"
+    - "role_id"
+    - "stable_role_brief_ref"
+    - "project_ref"
+    - "task_or_work_package_id"
+    - "current_or_applicable_gate_binding"
+    - "applicable_fact_owner_bindings"
+    - "upstream_roles"
+    - "downstream_roles"
+    - "inputs"
+    - "outputs"
+    - "allowed_process_starts"
+    - "allowed_tools_and_actions"
+    - "forbidden_actions_and_side_effects"
+    - "authority_source"
+    - "authorized_until"
+    - "human_escalation_triggers"
+    - "knowledge_manifest"
+    - "interaction_contract_refs"
+    - "model_binding"
+    - "runtime_binding"
+    - "harness_binding"
+    - "session_binding"
+    - "enforcement_mode"
+    - "generated_from"
+    - "validity"
+    - "invalidation_conditions"
+  binding_contracts:
+    current_or_applicable_gate_binding:
+      required_fields:
+        - "gate_id"
+        - "gate_status"
+        - "authority_source"
+    applicable_fact_owner_bindings:
+      cardinality: "ONE_OR_MORE"
+      required_item_fields:
+        - "fact_scope"
+        - "fact_owner_ref"
+        - "authority_source"
+  binding_validation_sources:
+    - "CURRENT_TRUTH"
+    - "STABLE_ROLE_BRIEF"
+    - "TASK_OR_WORK_PACKAGE"
+    - "AUTHORIZATION"
+  readiness_fail_closed_on:
+    - "BINDING_ABSENT"
+    - "BINDING_STALE"
+    - "BINDING_CONFLICTING"
+  readiness_states:
+    - "ROLE_PROFILE_READY"
+    - "ROLE_PROFILE_NOT_READY"
+
+knowledge_manifest:
+  contract_id: "KNOWLEDGE_MANIFEST"
+  required_fields:
+    - "manifest_id"
+    - "governance_version"
+    - "git_anchor"
+    - "minimum_required_sources"
+    - "task_specific_sources"
+    - "loaded_source_digests"
+    - "on_demand_search_allowed"
+    - "searched_scopes"
+    - "unresolved_rule_gap"
+  rule_gap_codes:
+    - "RULE_NOT_FOUND"
+    - "RULE_CONFLICT"
+    - "VERSION_AMBIGUOUS"
+
+interaction_contract:
+  contract_id: "INTERACTION_CONTRACT"
+  required_fields:
+    - "interaction_contract_id"
+    - "contract_version"
+    - "sender_role"
+    - "receiver_role"
+    - "action_type"
+    - "intent"
+    - "scope"
+    - "authority_source"
+    - "input_evidence"
+    - "allowed_tools_and_actions"
+    - "forbidden_actions_and_side_effects"
+    - "expected_output"
+    - "receipt_contract"
+    - "status"
+    - "terminal_state"
+    - "error_and_escalation"
+    - "audit_reference"
+  lifecycle_states:
+    - "PREPARED"
+    - "AUTHORIZED"
+    - "DISPATCHED"
+    - "ACKNOWLEDGED"
+    - "IN_PROGRESS"
+    - "OUTPUT_READY"
+    - "COMPLETED"
+    - "BLOCKED"
+    - "CANCELLED"
+    - "FAILED"
+    - "RESULT_UNKNOWN_RECONCILIATION_REQUIRED"
+
+interaction_operation:
+  contract_id: "INTERACTION_OPERATION"
+  required_fields:
+    - "interaction_id"
+    - "interaction_contract_id"
+    - "contract_version"
+    - "sender_role"
+    - "receiver_role"
+    - "task_or_work_package_id"
+    - "action_type"
+    - "scope"
+    - "authority_source"
+    - "input_evidence"
+    - "receipt"
+    - "status"
+    - "output_reference"
+    - "terminal_state"
+    - "error_and_escalation"
+    - "audit_reference"
+  lifecycle_ref: "interaction_contract.lifecycle_states"
+
+authorization_contract:
+  contract_id: "AUTHORIZATION_CONTRACT"
+  required_fields:
+    - "authorization_id"
+    - "authority_owner"
+    - "action"
+    - "scope"
+    - "target"
+    - "allowed_side_effects"
+    - "forbidden_side_effects"
+    - "validity"
+    - "consumption_event"
+    - "terminal_state"
+    - "retry_policy"
+    - "escalation"
+    - "status"
+    - "audit_reference"
+  lifecycle_states:
+    - "PROPOSED"
+    - "ISSUED_UNUSED"
+    - "CONSUMED"
+    - "CANCELLED"
+    - "EXPIRED"
+    - "EXECUTION_COMPLETED"
+    - "RESULT_UNKNOWN_RECONCILIATION_REQUIRED"
+  independent_action_classes:
+    - "FILE_MODIFICATION"
+    - "COMMIT"
+    - "TAG_CREATION"
+    - "BASELINE_ADOPTION"
+    - "INDEPENDENT_SESSION_CREATION"
+    - "FORMAL_C04_DISPATCH"
+    - "DEPENDENCY_INSTALLATION"
+    - "REAL_MODEL_INVOCATION"
+    - "PUSH"
+    - "PULL_REQUEST"
+    - "REMOTE_MUTATION"
+    - "FORMAL_SEAL"
+    - "RELEASE"
+  implication_between_action_classes: false
+
+task_state_machine:
+  contract_id: "TASK_STATE_MACHINE"
+  owner: "00_project/ai_context/ACTIVE_TASKS.md"
+  states:
+    - "TODO"
+    - "READY"
+    - "IN_PROGRESS"
+    - "BLOCKED"
+    - "OUTPUT_READY"
+    - "READY_FOR_REVIEW"
+    - "DONE"
+    - "CANCELLED"
+  terminal_states:
+    - "DONE"
+    - "CANCELLED"
+  transitions:
+    TODO:
+      - "READY"
+      - "CANCELLED"
+    READY:
+      - "IN_PROGRESS"
+      - "BLOCKED"
+      - "CANCELLED"
+    IN_PROGRESS:
+      - "OUTPUT_READY"
+      - "BLOCKED"
+      - "CANCELLED"
+    OUTPUT_READY:
+      - "READY_FOR_REVIEW"
+      - "DONE"
+      - "BLOCKED"
+    READY_FOR_REVIEW:
+      - "DONE"
+      - "IN_PROGRESS"
+      - "BLOCKED"
+    BLOCKED:
+      - "READY"
+      - "IN_PROGRESS"
+      - "OUTPUT_READY"
+      - "READY_FOR_REVIEW"
+      - "CANCELLED"
+    DONE: []
+    CANCELLED: []
+
+review_and_determination_route:
+  contract_id: "REVIEW_AND_DETERMINATION_ROUTE"
+  required_fields:
+    - "route_id"
+    - "intent"
+    - "review_line"
+    - "authority_class"
+    - "session_policy"
+    - "target"
+    - "authority_source"
+    - "expected_output"
+  review_lines:
+    - "INDEPENDENT_REVIEW"
+    - "CONTEXTUAL_REVIEW"
+    - "SELF_REVIEW"
+    - "HUMAN_DETERMINATION"
+  independent_review_subtypes:
+    - "FORMAL_C04"
+    - "INFORMAL_INDEPENDENT"
+  ambiguity_result: "WAIT_FOR_HUMAN"
+
+formal_c04_independence_evidence:
+  contract_id: "FORMAL_C04_INDEPENDENCE_EVIDENCE"
+  required_fields:
+    - "review_id"
+    - "reviewer_role"
+    - "new_session_id"
+    - "new_session_evidence"
+    - "execution_or_remediation_session_ids_excluded"
+    - "private_context_inherited"
+    - "context_package_manifest"
+    - "exact_immutable_target"
+    - "target_binding_evidence"
+    - "review_target_access"
+    - "allowed_write_paths"
+    - "git_write_allowed"
+    - "remote_mutation_allowed"
+    - "pre_review_target_status"
+    - "post_review_target_status"
+    - "review_record"
+  required_values:
+    reviewer_role: "C04"
+    private_context_inherited: false
+    review_target_access: "READ_ONLY"
+    git_write_allowed: false
+    remote_mutation_allowed: false
+
+human_determination_package:
+  contract_id: "HUMAN_DETERMINATION_PACKAGE"
+  required_fields:
+    - "determination_id"
+    - "what_must_be_decided"
+    - "why_human_authority_is_required"
+    - "confirmed_facts"
+    - "open_questions"
+    - "options_and_differences"
+    - "risks_and_tradeoffs"
+    - "recommended_option_and_reason"
+    - "approved_consequence"
+    - "changes_requested_consequence"
+    - "deferred_consequence"
+    - "rejected_consequence"
+    - "explicitly_not_authorized"
+    - "authoritative_sources"
+    - "copyable_response_format"
+  decision_values:
+    - "APPROVED"
+    - "CHANGES_REQUESTED"
+    - "DEFERRED"
+    - "REJECTED"
+
+formal_seal:
+  contract_id: "FORMAL_SEAL"
+  owner: "HUMAN_PROJECT_OWNER"
+  required_fields:
+    - "seal_id"
+    - "exact_immutable_target"
+    - "purpose"
+    - "scope"
+    - "evidence"
+    - "owner_explicit_decision"
+    - "issued_at"
+    - "audit_reference"
+  delegable_to_ai: false
+
+enforcement:
+  contract_id: "ENFORCEMENT_EVIDENCE"
+  modes:
+    - "PROCEDURAL_FALLBACK"
+    - "TOOL_ENFORCED"
+  required_fields:
+    - "enforcement_mode"
+    - "mechanical_enforcement"
+    - "control_evidence"
+    - "residual_risk"
+    - "degraded_controls"
+    - "reconciliation_required"
+  procedural_evidence_values:
+    - "DECLARED"
+    - "CHECKED"
+    - "HUMAN_CONFIRMED"
+  procedural_default_residual_risk: "PROCEDURAL_ERROR"
+
+model_runtime_harness_continuity:
+  contract_id: "EXECUTION_CONTINUITY_CHECK"
+  modes:
+    - "KNOWLEDGE_CONTINUATION_CHECK"
+    - "BASELINE_RELEARN"
+  required_fields:
+    - "logical_role"
+    - "logical_control_channel"
+    - "previous_provider_model_runtime_harness"
+    - "current_provider_model_runtime_harness"
+    - "git_anchor"
+    - "baseline"
+    - "task"
+    - "authority"
+    - "continuity_mode"
+    - "check_result"
+    - "evidence"

@@ -1,0 +1,196 @@
+grammar;
+
+use crate::cnl_ast::*;
+
+pub Profile: ByteSpan = <l:@L> "本规范采用" "APLS" "简体中文语言版本" "0.1" "。" <r:@R> => ByteSpan::new(l, r);
+
+pub DeclarationEntry: Spanned<Declaration> = <l:@L> <value:DeclarationRule> <r:@R> => spanned(l, value, r);
+
+DeclarationRule: Declaration = {
+    <name:Declared> "是" <kind:EntityKindRule> "。" => Declaration::Entity { name, kind },
+    <name:Declared> "是" "单位" "。" => Declaration::Unit { name },
+    <name:Declared> "是" <value_type:ValueTypeRule> "类型的" <access:AccessRule> "属性"
+        <unit:("，" "单位为" <Declared>)?> "。" => Declaration::Property { name, value_type, access, unit },
+    <name:Declared> "是" <target:Declared> "支持的" "动作" "。" => Declaration::Action { name, target },
+    <name:Declared> "是" "事件" "。" => Declaration::Event { name },
+    <alias:Declared> "是" <kind:AliasKindRule> <target:Declared> "的别名" "。" => Declaration::Alias { alias, kind, target },
+    <owner:Declared> "的状态包括" <states:StateList> "，" "初始状态是" <initial:Declared> "。" =>
+        Declaration::State { owner, states, initial },
+};
+
+EntityKindRule: Spanned<EntityKind> = {
+    <l:@L> "设备" <r:@R> => spanned(l, EntityKind::Device, r),
+    <l:@L> "组件" <r:@R> => spanned(l, EntityKind::Component, r),
+    <l:@L> "传感器" <r:@R> => spanned(l, EntityKind::Sensor, r),
+    <l:@L> "执行器" <r:@R> => spanned(l, EntityKind::Actuator, r),
+};
+
+ValueTypeRule: Spanned<ValueType> = {
+    <l:@L> "布尔" <r:@R> => spanned(l, ValueType::Boolean, r),
+    <l:@L> "整数" <r:@R> => spanned(l, ValueType::Integer, r),
+    <l:@L> "小数" <r:@R> => spanned(l, ValueType::Decimal, r),
+    <l:@L> "百分比" <r:@R> => spanned(l, ValueType::Percentage, r),
+    <l:@L> "文本" <r:@R> => spanned(l, ValueType::Text, r),
+    <l:@L> "时长" <r:@R> => spanned(l, ValueType::Duration, r),
+};
+
+AccessRule: Spanned<PropertyAccess> = {
+    <l:@L> "可观测" <r:@R> => spanned(l, PropertyAccess::Observable, r),
+    <l:@L> "可写" <r:@R> => spanned(l, PropertyAccess::Writable, r),
+    <l:@L> "可观测且可写" <r:@R> => spanned(l, PropertyAccess::Both, r),
+};
+
+AliasKindRule: Spanned<AliasKind> = {
+    <l:@L> "实体" <r:@R> => spanned(l, AliasKind::Entity, r),
+    <l:@L> "属性" <r:@R> => spanned(l, AliasKind::Property, r),
+    <l:@L> "动作" <r:@R> => spanned(l, AliasKind::Action, r),
+    <l:@L> "事件" <r:@R> => spanned(l, AliasKind::Event, r),
+    <l:@L> "单位" <r:@R> => spanned(l, AliasKind::Unit, r),
+};
+
+StateList: Vec<Spanned<String>> = {
+    <first:Declared> "和" <last:Declared> => vec![first, last],
+    <first:Declared> "、" <middle:(<Declared> "、")*> <last_but_one:Declared> "和" <last:Declared> => {
+        let mut values = vec![first]; values.extend(middle); values.push(last_but_one); values.push(last); values
+    },
+};
+
+pub NormativeEntry: Spanned<NormativeSentence> = <l:@L> <value:NormativeRule> <r:@R> => spanned(l, value, r);
+
+NormativeRule: NormativeSentence = {
+    "当" <condition:ConditionRule> "时" "，" <tail:WhenTail> "。" => match tail {
+        WhenContinuation::Rule { actor, modality, action, target } => {
+            let span = action.span.cover(target.span);
+            NormativeSentence::Rule { condition, modality, behavior: ActionInvocation { actor, action, target, span } }
+        }
+        WhenContinuation::Transition { entity, source_state, target_state } =>
+            NormativeSentence::Transition { trigger: condition, entity, source_state, target_state },
+    },
+    "如果" <condition:ConditionRule> "，" <actor:Actor> <modality:Modal> <action:ActionRefRule> <target:EntityRefRule> "。" => {
+        let span = action.span.cover(target.span); NormativeSentence::Rule { condition, modality, behavior: ActionInvocation { actor, action, target, span } }
+    },
+    <condition:ConditionRule> "时" "，" <actor:Actor> <modality:Modal> <action:ActionRefRule> <target:EntityRefRule> "。" => {
+        let span = action.span.cover(target.span); NormativeSentence::Rule { condition, modality, behavior: ActionInvocation { actor, action, target, span } }
+    },
+    "安全要求" "：" <condition:ConditionLead> <required_entity:EntityRefRule> "必须" "处于"
+        <required_state:StateRefRule> "状态" "。" =>
+        NormativeSentence::Invariant { condition, required_entity, required_state },
+    "验收要求" "：" "当" <trigger:ConditionRule> "时" "，" <expected:ConditionRule>
+        "必须在" <deadline:DurationRule> "内成立" "。" =>
+        NormativeSentence::Acceptance { trigger, expected, deadline },
+    "说明" "：" <text:InformativeRule> "。" => NormativeSentence::Informative { text },
+};
+
+WhenTail: WhenContinuation = {
+    <l:@L> "系统" <r:@R> <modality:Modal> <action:ActionRefRule> <target:EntityRefRule> =>
+        WhenContinuation::Rule { actor: ActorRef::System(ByteSpan::new(l, r)), modality, action, target },
+    <entity:EntityRefRule> <modality:Modal> <action:ActionRefRule> <target:EntityRefRule> =>
+        WhenContinuation::Rule { actor: ActorRef::Entity(entity), modality, action, target },
+    <entity:EntityRefRule> "从" <source_state:StateRefRule> "状态进入" <target_state:StateRefRule> "状态" =>
+        WhenContinuation::Transition { entity, source_state, target_state },
+};
+
+ConditionLead: Condition = {
+    "当" <value:ConditionRule> "时" "，" => value,
+    "如果" <value:ConditionRule> "，" => value,
+    <value:ConditionRule> "时" "，" => value,
+};
+
+ConditionRule: Condition = <first:AtomicRule> <rest:("并且" <AtomicRule>)*> => {
+    let last_span = rest.last().map_or(first.span(), AtomicCondition::span);
+    let first_span = first.span(); let mut atoms = vec![first]; atoms.extend(rest);
+    Condition { atoms, span: first_span.cover(last_span) }
+};
+
+AtomicRule: AtomicCondition = {
+    <property:PropertyRefRule> <operator:ComparisonRule> <right:LiteralRule> => {
+        let span = property.span.cover(right.span); AtomicCondition::Comparison { property, operator, right, span }
+    },
+    <entity:EntityRefRule> "处于" <state:StateRefRule> "状态" <r:@R> => {
+        let span = ByteSpan::new(entity.span.start_byte, r); AtomicCondition::State { entity, state, span }
+    },
+    <receiver:Actor> "收到" <event:EventRefRule> => {
+        let span = receiver.span().cover(event.span); AtomicCondition::Event { receiver, event, span }
+    },
+};
+
+ComparisonRule: Spanned<ComparisonOp> = {
+    <l:@L> "等于" <r:@R> => spanned(l, ComparisonOp::Eq, r), <l:@L> "不等于" <r:@R> => spanned(l, ComparisonOp::Ne, r),
+    <l:@L> "低于" <r:@R> => spanned(l, ComparisonOp::Lt, r), <l:@L> "不高于" <r:@R> => spanned(l, ComparisonOp::Le, r),
+    <l:@L> "高于" <r:@R> => spanned(l, ComparisonOp::Gt, r), <l:@L> "不低于" <r:@R> => spanned(l, ComparisonOp::Ge, r),
+};
+
+LiteralRule: RawLiteral = {
+    <l:@L> "真" <r:@R> => RawLiteral { kind: RawLiteralKind::Boolean(true), span: ByteSpan::new(l, r) },
+    <l:@L> "假" <r:@R> => RawLiteral { kind: RawLiteralKind::Boolean(false), span: ByteSpan::new(l, r) },
+    <l:@L> <value:SignedNumber> "%" <r:@R> => RawLiteral { kind: RawLiteralKind::Percentage(value), span: ByteSpan::new(l, r) },
+    <l:@L> <value:SignedNumber> "摄氏度" <r:@R> => RawLiteral { kind: RawLiteralKind::Temperature(value), span: ByteSpan::new(l, r) },
+    <value:DurationRule> => value,
+    <l:@L> <value:SignedNumber> <unit:UnitRefRule> <r:@R> => RawLiteral { kind: RawLiteralKind::Quantity { value, unit }, span: ByteSpan::new(l, r) },
+    <l:@L> <value:"TEXT"> <r:@R> => RawLiteral { kind: RawLiteralKind::Text(value), span: ByteSpan::new(l, r) },
+    <l:@L> <value:"SIGNED_INTEGER"> <r:@R> => RawLiteral { kind: RawLiteralKind::Integer(value), span: ByteSpan::new(l, r) },
+    <l:@L> <value:"SIGNED_DECIMAL"> <r:@R> => RawLiteral { kind: RawLiteralKind::Decimal(value), span: ByteSpan::new(l, r) },
+};
+
+DurationRule: RawLiteral = <l:@L> <value:UnsignedNumber> <unit:DurationUnit> <r:@R> =>
+    RawLiteral { kind: RawLiteralKind::Duration { value, unit }, span: ByteSpan::new(l, r) };
+
+SignedNumber: String = { <value:"SIGNED_INTEGER"> => value, <value:"SIGNED_DECIMAL"> => value };
+UnsignedNumber: String = { <value:"UNSIGNED_INTEGER"> => value, <value:"UNSIGNED_DECIMAL"> => value };
+DurationUnit: String = { "毫秒" => "毫秒".into(), "秒" => "秒".into(), "分钟" => "分钟".into() };
+Actor: ActorRef = { <l:@L> "系统" <r:@R> => ActorRef::System(ByteSpan::new(l, r)), <value:EntityRefRule> => ActorRef::Entity(value) };
+Modal: Spanned<Modality> = {
+    <l:@L> "必须" <r:@R> => spanned(l, Modality::Require, r),
+    <l:@L> "不得" <r:@R> => spanned(l, Modality::Prohibit, r),
+    <l:@L> "禁止" <r:@R> => spanned(l, Modality::Prohibit, r),
+};
+
+Declared: Spanned<String> = <l:@L> <value:"DECLARED_TERM"> <r:@R> => spanned(l, value, r);
+EntityRefRule: SymbolRef = <value:"ENTITY_REF"> => value;
+PropertyRefRule: SymbolRef = <value:"PROPERTY_REF"> => value;
+ActionRefRule: SymbolRef = <value:"ACTION_REF"> => value;
+EventRefRule: SymbolRef = <value:"EVENT_REF"> => value;
+StateRefRule: SymbolRef = <value:"STATE_REF"> => value;
+UnitRefRule: SymbolRef = <value:"UNIT_REF"> => value;
+InformativeRule: Spanned<String> = <l:@L> <value:"INFORMATIVE_TEXT"> <r:@R> => spanned(l, value, r);
+
+extern {
+    type Location = usize;
+    type Error = ();
+    enum Token {
+        "本规范采用" => Token::Fixed(FixedToken::ProfilePrefix), "APLS" => Token::Fixed(FixedToken::Apls),
+        "简体中文语言版本" => Token::Fixed(FixedToken::LanguageVersion), "0.1" => Token::Fixed(FixedToken::Version01),
+        "。" => Token::Fixed(FixedToken::FullStop), "，" => Token::Fixed(FixedToken::Comma), "：" => Token::Fixed(FixedToken::Colon),
+        "、" => Token::Fixed(FixedToken::EnumerationComma), "是" => Token::Fixed(FixedToken::Is), "单位" => Token::Fixed(FixedToken::Unit),
+        "设备" => Token::Fixed(FixedToken::EntityDevice), "组件" => Token::Fixed(FixedToken::EntityComponent),
+        "传感器" => Token::Fixed(FixedToken::EntitySensor), "执行器" => Token::Fixed(FixedToken::EntityActuator),
+        "类型的" => Token::Fixed(FixedToken::TypeSuffix), "可观测" => Token::Fixed(FixedToken::Observable),
+        "可写" => Token::Fixed(FixedToken::Writable), "可观测且可写" => Token::Fixed(FixedToken::Both),
+        "属性" => Token::Fixed(FixedToken::Property), "单位为" => Token::Fixed(FixedToken::UnitIs), "支持的" => Token::Fixed(FixedToken::Supported),
+        "动作" => Token::Fixed(FixedToken::Action), "事件" => Token::Fixed(FixedToken::Event), "的别名" => Token::Fixed(FixedToken::Alias),
+        "实体" => Token::Fixed(FixedToken::Entity), "的状态包括" => Token::Fixed(FixedToken::StateIncludes),
+        "初始状态是" => Token::Fixed(FixedToken::InitialStateIs), "和" => Token::Fixed(FixedToken::AndList),
+        "当" => Token::Fixed(FixedToken::When), "如果" => Token::Fixed(FixedToken::If), "时" => Token::Fixed(FixedToken::Then),
+        "系统" => Token::Fixed(FixedToken::System), "必须" => Token::Fixed(FixedToken::Must), "不得" => Token::Fixed(FixedToken::MustNot),
+        "禁止" => Token::Fixed(FixedToken::Prohibit), "从" => Token::Fixed(FixedToken::From), "状态进入" => Token::Fixed(FixedToken::StateEnter),
+        "状态" => Token::Fixed(FixedToken::StateWord), "安全要求" => Token::Fixed(FixedToken::SafetyRequirement),
+        "验收要求" => Token::Fixed(FixedToken::AcceptanceRequirement), "必须在" => Token::Fixed(FixedToken::MustWithin),
+        "内成立" => Token::Fixed(FixedToken::HoldsWithin), "说明" => Token::Fixed(FixedToken::Explanation),
+        "并且" => Token::Fixed(FixedToken::Conjunction), "等于" => Token::Fixed(FixedToken::Equals),
+        "不等于" => Token::Fixed(FixedToken::NotEquals), "低于" => Token::Fixed(FixedToken::Below),
+        "不高于" => Token::Fixed(FixedToken::NotAbove), "高于" => Token::Fixed(FixedToken::Above), "不低于" => Token::Fixed(FixedToken::NotBelow),
+        "处于" => Token::Fixed(FixedToken::InState), "收到" => Token::Fixed(FixedToken::Received), "真" => Token::Fixed(FixedToken::True),
+        "假" => Token::Fixed(FixedToken::False), "%" => Token::Fixed(FixedToken::Percent), "摄氏度" => Token::Fixed(FixedToken::Celsius),
+        "毫秒" => Token::Fixed(FixedToken::Millisecond), "秒" => Token::Fixed(FixedToken::Second), "分钟" => Token::Fixed(FixedToken::Minute),
+        "布尔" => Token::Fixed(FixedToken::BooleanType), "整数" => Token::Fixed(FixedToken::IntegerType),
+        "小数" => Token::Fixed(FixedToken::DecimalType), "百分比" => Token::Fixed(FixedToken::PercentageType),
+        "文本" => Token::Fixed(FixedToken::TextType), "时长" => Token::Fixed(FixedToken::DurationType),
+        "DECLARED_TERM" => Token::DeclaredTerm(<String>), "ENTITY_REF" => Token::EntityRef(<SymbolRef>),
+        "PROPERTY_REF" => Token::PropertyRef(<SymbolRef>), "ACTION_REF" => Token::ActionRef(<SymbolRef>),
+        "EVENT_REF" => Token::EventRef(<SymbolRef>), "STATE_REF" => Token::StateRef(<SymbolRef>),
+        "UNIT_REF" => Token::UnitRef(<SymbolRef>), "SIGNED_INTEGER" => Token::SignedInteger(<String>),
+        "SIGNED_DECIMAL" => Token::SignedDecimal(<String>), "UNSIGNED_INTEGER" => Token::UnsignedInteger(<String>),
+        "UNSIGNED_DECIMAL" => Token::UnsignedDecimal(<String>), "TEXT" => Token::Text(<String>),
+        "INFORMATIVE_TEXT" => Token::InformativeText(<String>),
+    }
+}

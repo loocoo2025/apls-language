@@ -1,0 +1,170 @@
+(* SUPERSEDED AS PUBLIC SURFACE BY DEC-014. Retained only as legacy DSL reference. *)
+(* APLS 0.1 pre-DEC-014 design input, not baselined. [] optional, {} repetition, | alternative. *)
+
+compilation_unit ::= language_decl { import_decl } spec_decl EOF ;
+language_decl    ::= "apls" string_lit ";" ;
+import_decl      ::= "import" string_lit "as" identifier ";" ;
+
+spec_decl ::= "spec" identifier "{" spec_version { spec_member } "}" ;
+spec_member ::= intent_stmt | dimension_decl | unit_decl
+              | type_decl | enum_decl | record_decl | domain_decl
+              | component_decl | operation_decl | transport_decl | event_decl
+              | execution_decl | channel_decl | state_machine_decl
+              | rule_decl | constraint_decl | safety_decl
+              | acceptance_decl | decision_decl | open_decl | unknown_decl ;
+
+spec_version ::= "version" string_lit ";" ;
+intent_stmt  ::= "intent" string_lit ";" ;
+
+dimension_decl ::= "dimension" identifier "{"
+                   "base_unit" identifier ";"
+                   [ rationale_stmt ] "}" ;
+unit_decl ::= "unit" identifier ":" qualified_name "{"
+              "symbol" string_lit ";"
+              "scale" number_lit ";"
+              [ "offset" signed_number ";" ]
+              [ rationale_stmt ] "}" ;
+
+type_decl   ::= "type" identifier "=" type_ref ";" ;
+enum_decl   ::= "enum" identifier "{" identifier { "," identifier } "}" ;
+record_decl ::= "record" identifier "{" { field_decl } "}" ;
+field_decl  ::= identifier ":" type_ref [ "=" const_expr ] ";" ;
+
+type_ref ::= primitive_type | qualified_name
+           | "list" "<" type_ref ">"
+           | "optional" "<" type_ref ">"
+           | "quantity" "<" qualified_name "," qualified_name ">" ;
+primitive_type ::= "bool" | "int" | "decimal" | "string" ;
+
+domain_decl ::= "domain" identifier "{"
+                "model" domain_model ";"
+                "supports" "[" execution_kind { "," execution_kind } "]" ";"
+                [ rationale_stmt ] "}" ;
+domain_model ::= "os" | "rtos" | "bare_metal" | "managed_runtime" ;
+
+component_decl ::= "component" identifier "{"
+                   { responsibility_stmt } [ rationale_stmt ] "}" ;
+responsibility_stmt ::= "responsibility" string_lit ";" ;
+rationale_stmt      ::= "rationale" string_lit ";" ;
+
+operation_decl ::= "operation" identifier "("
+                   [ parameter_decl { "," parameter_decl } ] ")"
+                   [ "returns" type_ref ] "{"
+                   "kind" operation_kind ";"
+                   [ rationale_stmt ] "}" ;
+operation_kind ::= "pure" | "action" ;
+parameter_decl ::= identifier ":" type_ref ;
+
+transport_decl ::= "transport" identifier "{"
+                   "kind" transport_kind ";"
+                   [ rationale_stmt ] "}" ;
+transport_kind ::= "in_process" | "ipc" | "network" | "bus" | "custom" ;
+
+event_decl ::= "event" identifier "{"
+               [ "payload" type_ref ";" ]
+               [ "source" qualified_name ";" ]
+               "}" ;
+
+execution_decl ::= "execution" identifier "{"
+                   "kind" execution_kind ";"
+                   "domain" qualified_name ";"
+                   [ "owner" qualified_name ";" ]
+                   trigger_stmt schedule_stmt
+                   { responsibility_stmt } "}" ;
+execution_kind ::= "process" | "thread" | "task" | "main_loop"
+                 | "interrupt" | "event_loop" | "coroutine" | "actor" ;
+trigger_stmt ::= "trigger" trigger_expr ";" ;
+trigger_expr ::= "call" "(" qualified_name ")"
+               | "event" "(" qualified_name ")"
+               | "message" "(" qualified_name ")"
+               | "timer" "(" expression ")"
+               | "interrupt" "(" qualified_name ")"
+               | "state_change" "(" qualified_name ")" ;
+schedule_stmt ::= "schedule" schedule_expr ";" ;
+schedule_expr ::= "periodic" "(" named_arg { "," named_arg } ")"
+                | "event_driven" | "preemptive" | "cooperative" ;
+
+channel_decl ::= "channel" identifier "{"
+                 "from" qualified_name ";"
+                 "to" qualified_name ";"
+                 "payload" type_ref ";"
+                 "mode" channel_mode ";"
+                 "transport" qualified_name ";"
+                 "ordering" ordering ";"
+                 "delivery" delivery ";"
+                 [ "capacity" integer_lit ";" ]
+                 [ "timeout" expression ";" ] "}" ;
+channel_mode ::= "message" | "event" | "queue" | "rpc" | "stream" ;
+ordering     ::= "fifo" | "priority" | "unordered" ;
+delivery     ::= "at_most_once" | "at_least_once" | "exactly_once" ;
+
+state_machine_decl ::= "state_machine" identifier "{"
+                       "initial" identifier ";"
+                       { state_decl } { transition_decl } "}" ;
+state_decl ::= "state" identifier [ "terminal" ] ";" ;
+transition_decl ::= "transition" identifier "{"
+                    "from" identifier ";" "on" qualified_name ";"
+                    [ "guard" expression ";" ]
+                    "to" identifier ";"
+                    [ "priority" integer_lit ";" ]
+                    [ "then" action_block ] "}" ;
+
+rule_decl ::= "rule" identifier "{"
+              "when" expression ";"
+              [ "hold_for" expression ";" ]
+              "then" action_block [ rationale_stmt ] "}" ;
+constraint_decl ::= "constraint" identifier "{"
+                    "class" constraint_class ";"
+                    "assert" expression ";" [ rationale_stmt ] "}" ;
+constraint_class ::= "architecture" | "performance" | "resource" ;
+safety_decl ::= "safety" identifier "{"
+                "when" expression ";"
+                { "prohibit" qualified_name ";" }
+                "then" action_block [ rationale_stmt ] "}" ;
+
+acceptance_decl ::= "acceptance" identifier "{"
+                    { given_stmt }
+                    "when" action_block
+                    "expect" expression ";"
+                    [ "within" expression ";" ] "}" ;
+given_stmt ::= "given" identifier ":" type_ref "=" const_expr ";" ;
+
+decision_decl ::= "decision" identifier "{"
+                  "status" decision_status ";"
+                  "statement" string_lit ";"
+                  rationale_stmt "}" ;
+decision_status ::= "frozen" | "approved" ;
+open_decl ::= "open" identifier "{" "question" string_lit ";" "}" ;
+unknown_decl ::= "unknown" identifier "{" "statement" string_lit ";" "}" ;
+
+action_block ::= "{" { action_stmt } "}" ;
+action_stmt ::= "emit" qualified_name "(" [ argument_list ] ")" ";"
+              | "invoke" qualified_name "(" [ argument_list ] ")" ";"
+              | "transition" qualified_name "to" qualified_name ";" ;
+argument_list ::= named_arg { "," named_arg } ;
+named_arg ::= identifier ":" expression ;
+
+expression ::= or_expr ;
+or_expr     ::= and_expr { "or" and_expr } ;
+and_expr    ::= equality_expr { "and" equality_expr } ;
+equality_expr ::= relation_expr { ( "==" | "!=" ) relation_expr } ;
+relation_expr ::= additive_expr { ( "<" | "<=" | ">" | ">=" ) additive_expr } ;
+additive_expr ::= multiplicative_expr { ( "+" | "-" ) multiplicative_expr } ;
+multiplicative_expr ::= unary_expr { ( "*" | "/" | "%" ) unary_expr } ;
+unary_expr ::= ( "not" | "-" ) unary_expr | primary_expr ;
+primary_expr ::= literal | name_primary | "(" expression ")" ;
+name_primary ::= qualified_name [ "(" [ argument_list ] ")" ] ;
+const_expr ::= literal | "[" [ literal { "," literal } ] "]" ;
+
+literal ::= bool_lit | string_lit | numeric_literal ;
+numeric_literal ::= number_lit [ "@" qualified_name ] ;
+number_lit ::= integer_lit | decimal_lit ;
+signed_number ::= [ "-" ] number_lit ;
+bool_lit ::= "true" | "false" ;
+
+qualified_name ::= identifier { "." identifier } ;
+identifier  ::= IDENTIFIER_TOKEN ;
+integer_lit ::= INTEGER_TOKEN ;
+decimal_lit ::= DECIMAL_TOKEN ;
+string_lit  ::= STRING_TOKEN ;
+EOF ::= END_OF_FILE ;

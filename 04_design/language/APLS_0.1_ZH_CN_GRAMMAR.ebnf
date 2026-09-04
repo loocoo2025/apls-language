@@ -1,0 +1,202 @@
+(* APLS 0.1 Simplified Chinese Controlled Natural Language Grammar
+   Grammar ID: GRAM-APLS-ZH-CNL-001
+   Status: TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018
+   This is the sole candidate public surface grammar for apls-zh-CN-0.1.
+   It does not authorize implementation and is not a product baseline.
+   The Controlled Lexer skips permitted structural spacing at ordinary token
+   boundaries. ws1 and opt-space denote source-sensitive lexical constraints. *)
+
+document = spacing, profile-declaration, { spacing, sentence }, spacing ;
+
+sentence = declaration-sentence
+         | rule-sentence
+         | transition-sentence
+         | invariant-sentence
+         | acceptance-sentence
+         | informative-sentence ;
+
+profile-declaration = "本规范采用", ws1, "APLS", ws1,
+                      "简体中文语言版本", ws1, "0.1", "。" ;
+
+declaration-sentence = entity-declaration
+                     | unit-declaration
+                     | property-declaration
+                     | action-declaration
+                     | event-declaration
+                     | alias-declaration
+                     | state-declaration ;
+
+entity-declaration = declared-term, "是", entity-kind, "。" ;
+entity-kind = "设备" | "组件" | "传感器" | "执行器" ;
+
+unit-declaration = declared-term, "是单位。" ;
+
+property-declaration = declared-term, "是", value-type, "类型的",
+                       property-access, "属性", [ "，单位为", declaration-reference ], "。" ;
+value-type = "布尔" | "整数" | "小数" | "百分比" | "文本" | "时长" ;
+property-access = "可观测" | "可写" | "可观测且可写" ;
+
+action-declaration = declared-term, "是", declaration-reference, "支持的动作。" ;
+event-declaration = declared-term, "是事件。" ;
+alias-declaration = declared-term, "是", alias-kind, declaration-reference, "的别名。" ;
+alias-kind = "动作" | "事件" | "实体" | "属性" | "单位" ;
+
+state-declaration = declaration-reference, "的状态包括", state-list,
+                    "，初始状态是", state-name, "。" ;
+state-list = state-name, "和", state-name
+           | state-name, "、", state-name, { "、", state-name }, "和", state-name ;
+state-name = "“", term-name, "”" ;
+
+rule-sentence = condition-lead, actor-reference, obligation-modal, action-phrase, "。" ;
+condition-lead = "当", condition, "时，"
+               | "如果", condition, "，"
+               | condition, "时，" ;
+obligation-modal = "必须" | "不得" | "禁止" ;
+action-phrase = action-reference, entity-reference ;
+
+transition-sentence = "当", condition, "时，", entity-reference,
+                      "从", state-reference, "状态进入", state-reference, "状态。" ;
+
+invariant-sentence = "安全要求：", condition-lead,
+                     entity-reference, "必须处于", state-reference, "状态。" ;
+
+acceptance-sentence = "验收要求：当", condition, "时，", condition,
+                      "必须在", duration, "内成立。" ;
+
+informative-sentence = "说明：", informative-text, "。" ;
+
+condition = atomic-condition, { "并且", atomic-condition } ;
+atomic-condition = comparison-condition
+                 | state-condition
+                 | event-condition ;
+
+comparison-condition = property-reference, comparison, typed-value ;
+comparison = "等于" | "不等于" | "低于" | "不高于" | "高于" | "不低于" ;
+
+state-condition = entity-reference, "处于", state-reference, "状态" ;
+event-condition = actor-reference, "收到", event-reference ;
+
+typed-value = boolean-value
+            | percentage-value
+            | temperature-value
+            | duration
+            | number-with-declared-unit
+            | text-value
+            | integer-value
+            | decimal-value ;
+
+boolean-value = "真" | "假" ;
+percentage-value = signed-number, opt-space, "%" ;
+temperature-value = signed-number, opt-space, "摄氏度" ;
+duration = unsigned-number, opt-space, duration-unit ;
+duration-unit = "毫秒" | "秒" | "分钟" ;
+number-with-declared-unit = signed-number, ws1, unit-reference ;
+integer-value = signed-integer ;
+decimal-value = signed-decimal ;
+text-value = "『", text-content, "』" ;
+
+actor-reference = "系统" | entity-reference ;
+entity-reference = exact-entity-reference | bare-entity-reference ;
+property-reference = exact-property-reference | bare-property-reference ;
+action-reference = exact-action-reference | bare-action-reference ;
+event-reference = exact-event-reference | bare-event-reference ;
+state-reference = exact-state-reference | bare-state-reference ;
+unit-reference = exact-unit-reference | bare-unit-reference ;
+
+(* exact-* and bare-* terminals are emitted by the deterministic Terminology
+   Indexer with their declared symbol category. A source substring may yield
+   more than one tokenization; the compiler must enumerate all complete
+   tokenizations. Intermediate multiplicity is permitted; acceptance requires
+   exactly one Canonical Frame equivalence class after binding and normalization. *)
+
+exact-term-reference = exact-entity-reference
+                     | exact-property-reference
+                     | exact-action-reference
+                     | exact-event-reference
+                     | exact-state-reference
+                     | exact-unit-reference ;
+
+declared-term = "“", term-name, "”" ;
+declaration-reference = declared-term ;
+
+(* Declaration bootstrap emits every well-formed quoted name as the generic
+   DECLARED_TERM terminal without consulting a Terminology Graph. The enclosing
+   declaration production supplies the expected category/owner role. All
+   provisional headers are collected before declaration binding, so forward
+   references do not require a second parser or a category-labelled pre-index. *)
+
+(* The following are distinct category-labelled lexer terminals even when their
+   source spellings contain the same Unicode scalars. The Terminology Indexer
+   emits all legal candidates; the Convergence Gate requires one Canonical Frame
+   equivalence class after deterministic semantic validation and normalization. *)
+exact-entity-reference = ? EXACT_ENTITY_REF token ? ;
+exact-property-reference = ? EXACT_PROPERTY_REF token ? ;
+exact-action-reference = ? EXACT_ACTION_REF token ? ;
+exact-event-reference = ? EXACT_EVENT_REF token ? ;
+exact-state-reference = ? EXACT_STATE_REF token with owner candidate ? ;
+exact-unit-reference = ? EXACT_UNIT_REF token ? ;
+
+bare-entity-reference = ? BARE_ENTITY_REF token ? ;
+bare-property-reference = ? BARE_PROPERTY_REF token ? ;
+bare-action-reference = ? BARE_ACTION_REF token ? ;
+bare-event-reference = ? BARE_EVENT_REF token ? ;
+bare-state-reference = ? BARE_STATE_REF token with owner candidate ? ;
+bare-unit-reference = ? BARE_UNIT_REF token ? ;
+
+term-name = term-first, { term-rest } ;
+
+term-first = han | ascii-letter ;
+term-rest = han | ascii-letter | ascii-digit | "_" | "-" | "·" ;
+han = U+3400..U+4DBF | U+4E00..U+9FFF ;
+ascii-letter = "A".."Z" | "a".."z" ;
+ascii-digit = "0".."9" ;
+
+integer = "0" | nonzero-digit, { ascii-digit } ;
+unsigned-number = integer | unsigned-decimal ;
+unsigned-decimal = integer, ".", ascii-digit, { ascii-digit } ;
+signed-number = signed-integer | signed-decimal ;
+signed-integer = [ "-" ], integer ;
+signed-decimal = [ "-" ], unsigned-decimal ;
+nonzero-digit = "1".."9" ;
+
+informative-text = "『", text-content, "』" ;
+text-content = { allowed-text-scalar } ;
+allowed-text-scalar = ? any permitted Unicode scalar except U+300E, U+300F,
+                        CR, LF, control, surrogate, noncharacter ? ;
+
+spacing = { " " | LF | CRLF } ;
+ws1 = ( " " | LF | CRLF ), spacing ;
+opt-space = [ " " ] ;
+
+(* Additional well-formedness constraints:
+   1. The document is valid UTF-8 without BOM and is already NFC.
+   2. A declared name contains 1..64 Unicode scalar values.
+   3. Entity, property, action, event, and unit names are unique inside their
+      symbol category. State names are unique inside their owning entity.
+   4. Fixed keywords, including the built-in actor 系统, cannot be declared.
+   5. state-list contains at least two distinct states; the initial state is in it.
+   6. A flat condition contains only conjunction; 或者 and general negation reject.
+   7. Each accepted normative sentence converges to exactly one Canonical Frame
+      equivalence class; multiple intermediate tokenizations or parses are permitted.
+   8. All complete candidates must be retained until deterministic semantic rules
+      reject or normalize them. Longest-match, arbitrary priority, probability,
+      LLM choice, and first-match selection are forbidden.
+   9. Raw integer-value or decimal-value is legal only when the property type supplies
+      the unique type and has no required unit.
+  10. A duration in an Acceptance frame must be greater than zero.
+  11. Property declaration units and Comparison typed values/operators must satisfy
+      DES-APLS-CNL-SEMVAL-001; Grammar acceptance alone never authorizes a
+      cross-type or cross-unit comparison.
+  12. A surface conjunction is normalized by Atomic payload: duplicates coalesce;
+      one remaining item becomes an AtomicCondition, while two or more remain a
+      Conjunction. Provenance is unioned and no item is selected by order.
+  13. declaration-sentence is parsed in declaration_bootstrap mode: every quoted
+      name is category-neutral DECLARED_TERM, all complete streams use this same
+      formal Grammar, and category/owner binding occurs only after all provisional
+      declaration headers have been collected. No uncounted scanner or second
+      normative parser is permitted.
+  14. declaration-sentence and the normative/informative sentence alternatives
+      are disjoint source languages. A Compiler that obtains a successful candidate
+      in both classes has violated the Grammar contract and must fail internally;
+      it cannot use class order as a semantic priority.
+*)
