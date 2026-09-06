@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | Q-001 | P1 | 历史问题：APLS 0.1 表面语法采用 DSL、YAML 还是双入口？ | 旧公共语言接口 | HUMAN_PROJECT_OWNER | SUPERSEDED — DEC-014 |
 | Q-002 | P1 | 编译器 MVP 采用哪一种实现语言与 Parser 技术组合？ | 工具链实现、Grammar 零冲突门槛与部署 | HUMAN_PROJECT_OWNER | CLOSED — OPTION A |
-| Q-003 | P2 | 第一版是否绑定 FreeRTOS 水肥控制作为参考后端？ | MVP 边界 | C01 | OPEN |
+| Q-003 | P2 | 第一版是否绑定 FreeRTOS 水肥控制作为参考后端？ | MVP 边界 | C01 | CLOSED — 不绑定（DEC-037） |
 | Q-004 | P1 | 是否批准 `HDP-APLS-001` 所绑定的 APLS 0.1 PRD 候选作为下一阶段输入？ | 是否允许进入语言与 IR 架构设计 | HUMAN_PROJECT_OWNER | CLOSED — APPROVED |
 | Q-005 | P1 | 是否批准 `ARCH-APLS-001` 作为语言规范、IR Schema 与编译器详细设计的架构输入？ | 是否允许进入详细设计 | HUMAN_PROJECT_OWNER | CLOSED — APPROVED |
 | Q-006 | P1 | 是否批准 APLS 0.1 Grammar、Canonical IR Schema 和诊断目录候选作为 Compiler MVP 设计输入？ | 是否允许进入编译器 MVP 详细设计 | HUMAN_PROJECT_OWNER | CLOSED — APPROVED |
@@ -28,4 +28,4 @@
 | Q-024 | P1 | 是否批准 `WP-APLS-C04-REMEDIATION-001` 整改工作包，并裁决 Q1（F-02 冲突语义）、Q2（F-06 unknown/open）、Q3（F-04 根因聚合与七码）、Q4/Q4-a（F-08 追溯层范围）？ | 9 项 Open Finding 的整改是否可进入实施 | HUMAN_PROJECT_OWNER | CLOSED — HDP-APLS-024 APPROVED（Q1=A/Q2=B/Q3=A/Q4=A/Q4-a=NO）/ DEC-031 |
 | Q-025 | P1 | 是否将精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` 采用为 APLS 0.1 产品 Baseline（是否同时授权治理回执提交与私有远程 Push）？ | 产品 Baseline 成立与远程同步 | HUMAN_PROJECT_OWNER | CLOSED — HDP-APLS-025 APPROVED（Q1=A/Q2=A）/ DEC-034 |
 
-`Q-015` 已由 `HDP-APLS-014 Option A` 关闭；`Q-007/Q-016` 已由 `HDP-APLS-015 Option A` / `DEC-019` 关闭；`Q-017` 已由 `HDP-APLS-016 Option A` / `DEC-020` 关闭；`Q-018` 已由 `HDP-APLS-017 Option A` / `DEC-021` 关闭；`Q-019` 已由 `HDP-APLS-018 Option A` / `DEC-023` 关闭；`Q-020` 已由 `HDP-APLS-019 Option A` / `DEC-024` 关闭；`Q-021` 已由 `HDP-APLS-020 Option A` / `DEC-025` 关闭；`Q-022` 已由项目负责人明确授权及 `DEC-026` 关闭；`Q-023` 已由 `HDP-APLS-022 APPROVED Option A` / `DEC-028` 关闭；`Q-024` 已由 `HDP-APLS-024 APPROVED` / `DEC-031` 关闭；`Q-025` 已由 `HDP-APLS-025 APPROVED` / `DEC-034` 关闭。当前无 P0/P1 未决问题；`Q-003`（P2）保持 OPEN。
+`Q-015` 已由 `HDP-APLS-014 Option A` 关闭；`Q-007/Q-016` 已由 `HDP-APLS-015 Option A` / `DEC-019` 关闭；`Q-017` 已由 `HDP-APLS-016 Option A` / `DEC-020` 关闭；`Q-018` 已由 `HDP-APLS-017 Option A` / `DEC-021` 关闭；`Q-019` 已由 `HDP-APLS-018 Option A` / `DEC-023` 关闭；`Q-020` 已由 `HDP-APLS-019 Option A` / `DEC-024` 关闭；`Q-021` 已由 `HDP-APLS-020 Option A` / `DEC-025` 关闭；`Q-022` 已由项目负责人明确授权及 `DEC-026` 关闭；`Q-023` 已由 `HDP-APLS-022 APPROVED Option A` / `DEC-028` 关闭；`Q-024` 已由 `HDP-APLS-024 APPROVED` / `DEC-031` 关闭；`Q-025` 已由 `HDP-APLS-025 APPROVED` / `DEC-034` 关闭；`Q-003` 已由项目负责人裁决“不绑定” / `DEC-037` 关闭。当前无未决问题。

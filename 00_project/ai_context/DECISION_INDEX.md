@@ -40,6 +40,8 @@
 | DEC-034 | APLS 0.1 产品 Baseline Adoption 与远程同步 | 批准 `HDP-APLS-025`：Q1=A，采用精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` 为 `APLS-0.1-BASELINE-001`（需求、语言规范、Canonical IR、编译器实现、测试与追溯层转为 CURRENT，版本摘除 draft 标记）；Q2=A，授权提交 Anchor 后治理回执为一个新 Commit 并将 `main` Push 到私有远程；不含 Release/Tag/Formal Seal/公开仓库授权 | APPROVED | 项目负责人 2026-09-06 明确回复 `HDP-APLS-025: APPROVED`（Q1=A/Q2=A） | 2026-09-06 | 产品 Baseline 成立、治理回执提交、私有远程同步 |
 | DEC-035 | Profile §11 样例缺陷修正 | `APLS_0.1_ZH_CN_LANGUAGE_PROFILE.md` §11“目标体验样例”缺少指向“激活”状态的转换，被 Baselined 编译器以 E1402 拒绝；按项目负责人“立即处理”指令修正样例（补 `急停命令` 事件与转换句），修正后样例经编译器实测 Exit 0；属编辑性文档修正，不改变任何规范性语言行为，不触发正式 C04；交付文档一律使用中文 | APPROVED | 项目负责人 2026-09-06 明确指令“立即处理，另外给我的文档要都是中文的” | 2026-09-06 | Profile 文档货币性、用户教程语言约束 |
 | DEC-036 | 教程与样例修正的提交与远程同步 | 授权提交当前全部未提交文件（`docs/APLS_0.1_USER_TUTORIAL.md`、Profile §11 修正、治理回执与 DEC-035/036）为一个新 Commit 并 Push `main` 到私有远程；不含 Release/Tag/Formal Seal 授权 | APPROVED | 项目负责人 2026-09-06 明确指令“提交并同步远程” | 2026-09-06 | 教程发布到仓库、私有远程同步 |
+| DEC-037 | 参考后端不绑定 | Q-003 裁决：APLS 0.1 不绑定 FreeRTOS 水肥控制作为参考后端；编译器与语言契约保持后端中立，教程/文档中的灌溉场景仅为示例，不构成产品绑定 | APPROVED | 项目负责人 2026-09-06 明确“P2：是否绑定 FreeRTOS 水肥控制参考后端，不绑定” | 2026-09-06 | MVP 边界、文档示例性质 |
+| DEC-038 | APLS v0.1.0 私有发布 | 授权在私有仓库发布 v0.1.0：发布前在精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` 干净副本复跑全部锁定离线验证与追溯门禁（PASS）后，创建 annotated Tag `v0.1.0` 指向该 Commit、Push Tag 并创建 GitHub Release；发布记录 `14_release/release_records/RELEASE_RECORD_APLS_v0.1.0.md`；Formal Seal NOT_ISSUED；不含公开仓库/协作者授权 | APPROVED | 项目负责人 2026-09-06 明确“release v0.1.0吧，私有仓库” | 2026-09-06 | v0.1.0 Tag、GitHub Release、发布记录 |
 
 ## 当前有效决定摘要
 

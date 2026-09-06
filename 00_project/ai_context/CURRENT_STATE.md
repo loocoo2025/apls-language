@@ -7,9 +7,9 @@
 - 项目：APLS（Agent Programming Language Specification）
 - 当前产品版本：`0.1.0`
 - 当前开发阶段：`BASELINE_ESTABLISHED`
-- 当前里程碑：`M38 — APLS-0.1-BASELINE-001 成立（HDP-APLS-025 / DEC-034），治理回执已提交并同步私有远程`
+- 当前里程碑：`M39 — APLS v0.1.0 已发布（私有仓库 Tag + GitHub Release，DEC-038）`
 - 最后更新时间：`2026-09-06`
-- 当前项目状态：`BASELINE_ADOPTED_REMOTE_SYNCHRONIZED`
+- 当前项目状态：`RELEASED_V0_1_0_PRIVATE`
 - 当前 Baseline：见 `BASELINE_INDEX.md`
 - 当前有效决定：见 `DECISION_INDEX.md`
 
@@ -45,7 +45,8 @@ CURRENT_AUTHORIZATION: AUTH-APLS-C01-024-BATCH2-IMPLEMENTATION EXECUTION_COMPLET
 CURRENT_AUTHORIZATION: AUTH-APLS-C00-033-ANCHOR EXECUTION_COMPLETED（DEC-033；新精确 Anchor Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993`，Tree `c672fe950c4ef9a75af0fe4430254982a5ab175b`，256 文件；未 Push）
 CURRENT_AUTHORIZATION: AUTH-APLS-C04-033-REREVIEW-DISPATCH EXECUTION_COMPLETED（DEC-033；APLS-C04-Independent-Review-v03 复审完成：FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS，Open Finding = 0，Target 三时点核验一致）
 CURRENT_AUTHORIZATION: AUTH-APLS-C00-034-RECEIPT-COMMIT-PUSH EXECUTION_COMPLETED（DEC-034 Q2=A；治理回执 Commit `dc3b4d5a106f6967b08145b4cd4dffc3a4b6c9e2` 已提交并 Push，`origin/main` 已同步核验一致）
-CURRENT_AUTHORIZATION: AUTH-APLS-C00-036-TUTORIAL-COMMIT-PUSH ISSUED_UNUSED（DEC-036；提交教程与 Profile §11 修正等全部未提交文件并 Push main 到私有远程）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-036-TUTORIAL-COMMIT-PUSH EXECUTION_COMPLETED（DEC-036；Commit `ec69a2d` 已提交并 Push，远程核验一致）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-038-RELEASE EXECUTION_COMPLETED（DEC-038；Tag `v0.1.0` → `fd8b5953...` 已 Push，GitHub Release 已创建，发布记录与治理回执提交并同步）
 
 PRIMARY_EXECUTOR:
 MODEL: KIMI_K3
@@ -87,8 +88,8 @@ HUMAN_PROJECT_OWNER: PROJECT_OWNER_USER
 
 ## 4. 当前阻塞与风险
 
-- 当前是否阻塞：`NO — Rust 1.98.0（默认）/1.86.0 工具链已安装（DEC-032），锁定离线基线核验通过（Compiler 24 PASS/1 ignored、CLI 全 PASS）`
-- P0/P1 未决问题：`NONE（Q-024 已由 HDP-APLS-024 APPROVED / DEC-031 关闭；Q-003 为 P2 保持 OPEN）`
+- 当前是否阻塞：`NO`
+- P0/P1 未决问题：`NONE（全部未决问题已关闭：Q-003 经 DEC-037 裁决“不绑定参考后端”）`
 - 第一次再复审：`IIR-APLS-TASK019-REREVIEW-001 = CHANGES_RECOMMENDED`；BF-02/03/04/05/08/09 Closed，BF-06/07/10 Partial，新增 NF-01～NF-04。
 - 第二次再复审：`IIR-APLS-TASK019-REREVIEW-002 = CHANGES_RECOMMENDED`；BF-02/03/04/05/07/08/09 与 NF-01/02/04 Closed，BF-06/10 与 NF-03 Partial，新增 NF-05。
 - 第三次增量再复审：`IIR-APLS-TASK019-REREVIEW-003 = READY_FOR_HUMAN_DETERMINATION`；BF-02～BF-10 与 NF-01～NF-05 全部 Closed，其中未变化项按 `INHERITED_CLOSED` 继承。
@@ -113,8 +114,8 @@ HUMAN_PROJECT_OWNER: PROJECT_OWNER_USER
 
 ## 5. 当前下一步
 
-1. 无待执行动作；项目进入 Baseline 后增量治理，普通改动按 `DELTA_ONLY` 复审链执行；
-2. 可选后续（均需您明确发起/裁决）：Release、Formal Seal、Q-003（P2 参考后端绑定）、两条 ignored 用例的联网重跑。
+1. 无待执行动作；v0.1.0 已发布（私有），项目进入 Baseline 后增量治理，普通改动按 `DELTA_ONLY` 复审链执行；
+2. 可选后续（均需您明确发起/裁决）：Formal Seal（仅您本人可签发）、两条 ignored 用例的联网重跑、0.2 方向规划。
 
 ## 6. 上下文健康
 
