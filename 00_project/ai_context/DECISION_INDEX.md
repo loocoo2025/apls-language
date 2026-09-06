@@ -38,6 +38,8 @@
 | DEC-032 | Rust 工具链安装授权 | 授权在本机安装 rustup + Rust 1.98.0（参考工具链）与 1.86.0（MSRV 核验），并允许 `cargo fetch/build/test --locked` 按 Cargo.lock 联网拉取精确锁定依赖；不授权变更依赖闭包、版本或 Lock | APPROVED | 项目负责人 2026-09-06 明确选择“授权安装 Rust 工具链” | 2026-09-06 | TASK-024 批次 1 实施与验证环境前提 |
 | DEC-033 | 整改收口三项裁决与新 Anchor | ① 接受 C01 对 `system_architecture.md` §8 的扩展修正（F-06 同根因）；② 授权修正 `APLS_0.1_ZH_CN_GRAMMAR.ebnf` 第 3 行过期状态注释（仅注释，不动语法产生式）；③ 参照 DEC-026 模式授权创建一个包含全部整改与治理落盘的新精确 Git Anchor 作为 Finding 关闭复审 Target；随后 C00 发起全新独立 C04 关闭复审；不含 Push/Baseline/Release/Formal Seal 授权 | APPROVED | 项目负责人 2026-09-06 明确选择“三项全部批准” | 2026-09-06 | TASK-024 收口、新 Review Target、Finding 关闭复审 |
 | DEC-034 | APLS 0.1 产品 Baseline Adoption 与远程同步 | 批准 `HDP-APLS-025`：Q1=A，采用精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` 为 `APLS-0.1-BASELINE-001`（需求、语言规范、Canonical IR、编译器实现、测试与追溯层转为 CURRENT，版本摘除 draft 标记）；Q2=A，授权提交 Anchor 后治理回执为一个新 Commit 并将 `main` Push 到私有远程；不含 Release/Tag/Formal Seal/公开仓库授权 | APPROVED | 项目负责人 2026-09-06 明确回复 `HDP-APLS-025: APPROVED`（Q1=A/Q2=A） | 2026-09-06 | 产品 Baseline 成立、治理回执提交、私有远程同步 |
+| DEC-035 | Profile §11 样例缺陷修正 | `APLS_0.1_ZH_CN_LANGUAGE_PROFILE.md` §11“目标体验样例”缺少指向“激活”状态的转换，被 Baselined 编译器以 E1402 拒绝；按项目负责人“立即处理”指令修正样例（补 `急停命令` 事件与转换句），修正后样例经编译器实测 Exit 0；属编辑性文档修正，不改变任何规范性语言行为，不触发正式 C04；交付文档一律使用中文 | APPROVED | 项目负责人 2026-09-06 明确指令“立即处理，另外给我的文档要都是中文的” | 2026-09-06 | Profile 文档货币性、用户教程语言约束 |
+| DEC-036 | 教程与样例修正的提交与远程同步 | 授权提交当前全部未提交文件（`docs/APLS_0.1_USER_TUTORIAL.md`、Profile §11 修正、治理回执与 DEC-035/036）为一个新 Commit 并 Push `main` 到私有远程；不含 Release/Tag/Formal Seal 授权 | APPROVED | 项目负责人 2026-09-06 明确指令“提交并同步远程” | 2026-09-06 | 教程发布到仓库、私有远程同步 |
 
 ## 当前有效决定摘要
 

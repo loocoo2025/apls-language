@@ -7,16 +7,16 @@
 - 项目：APLS（Agent Programming Language Specification）
 - 当前产品版本：`0.1.0`
 - 当前开发阶段：`BASELINE_ESTABLISHED`
-- 当前里程碑：`M38 — APLS-0.1-BASELINE-001 成立（HDP-APLS-025 / DEC-034），治理回执提交与私有远程同步执行中`
+- 当前里程碑：`M38 — APLS-0.1-BASELINE-001 成立（HDP-APLS-025 / DEC-034），治理回执已提交并同步私有远程`
 - 最后更新时间：`2026-09-06`
-- 当前项目状态：`BASELINE_ADOPTED_SYNC_IN_PROGRESS`
+- 当前项目状态：`BASELINE_ADOPTED_REMOTE_SYNCHRONIZED`
 - 当前 Baseline：见 `BASELINE_INDEX.md`
 - 当前有效决定：见 `DECISION_INDEX.md`
 
 ## 2. 当前执行状态
 
-- 当前 Gate：`BASELINE_ADOPTED（APLS-0.1-BASELINE-001）— GOVERNANCE_RECEIPT_COMMIT_AND_PUSH`
-- 当前执行焦点：按 DEC-034 Q2=A 提交 Anchor 后治理回执并 Push `main` 到私有远程
+- 当前 Gate：`NONE_OPEN — POST_BASELINE_INCREMENTAL_GOVERNANCE`
+- 当前执行焦点：Baseline 后增量治理待命；无活动 Gate
 - 当前责任角色：`C00`
 - 持续逻辑控制通道：`C00`
 - 当前任务：`TASK-024 = DONE（复审 PASS）`；当前无活动执行任务
@@ -44,7 +44,8 @@ CURRENT_AUTHORIZATION: AUTH-APLS-C03-024-BATCH1-IMPLEMENTATION EXECUTION_COMPLET
 CURRENT_AUTHORIZATION: AUTH-APLS-C01-024-BATCH2-IMPLEMENTATION EXECUTION_COMPLETED（HDP-APLS-024 / DEC-031；批次 2 完成：27 个新需求 ID、30 条 FORMAL_TRACE 边，validate_traceability.py PASS，C00 复核一致；§8 扩展修正与 EBNF 注释修正已由 DEC-033 接受/授权）
 CURRENT_AUTHORIZATION: AUTH-APLS-C00-033-ANCHOR EXECUTION_COMPLETED（DEC-033；新精确 Anchor Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993`，Tree `c672fe950c4ef9a75af0fe4430254982a5ab175b`，256 文件；未 Push）
 CURRENT_AUTHORIZATION: AUTH-APLS-C04-033-REREVIEW-DISPATCH EXECUTION_COMPLETED（DEC-033；APLS-C04-Independent-Review-v03 复审完成：FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS，Open Finding = 0，Target 三时点核验一致）
-CURRENT_AUTHORIZATION: AUTH-APLS-C00-034-RECEIPT-COMMIT-PUSH ISSUED_UNUSED（DEC-034 Q2=A；仅提交 Anchor 后治理回执为一个新 Commit 并 Push main 到私有远程 loocoo2025/apls-language）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-034-RECEIPT-COMMIT-PUSH EXECUTION_COMPLETED（DEC-034 Q2=A；治理回执 Commit `dc3b4d5a106f6967b08145b4cd4dffc3a4b6c9e2` 已提交并 Push，`origin/main` 已同步核验一致）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-036-TUTORIAL-COMMIT-PUSH ISSUED_UNUSED（DEC-036；提交教程与 Profile §11 修正等全部未提交文件并 Push main 到私有远程）
 
 PRIMARY_EXECUTOR:
 MODEL: KIMI_K3
@@ -112,9 +113,8 @@ HUMAN_PROJECT_OWNER: PROJECT_OWNER_USER
 
 ## 5. 当前下一步
 
-1. C00 完成治理回执提交与私有远程 Push（DEC-034 Q2=A，本步执行后即收口）；
-2. 此后项目进入 Baseline 后增量治理：普通改动按 `DELTA_ONLY` 复审链执行；
-3. Release 与 Formal Seal 仍须另行明确裁决，未授权。
+1. 无待执行动作；项目进入 Baseline 后增量治理，普通改动按 `DELTA_ONLY` 复审链执行；
+2. 可选后续（均需您明确发起/裁决）：Release、Formal Seal、Q-003（P2 参考后端绑定）、两条 ignored 用例的联网重跑。
 
 ## 6. 上下文健康
 
