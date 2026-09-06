@@ -31,6 +31,12 @@
 | DEC-025 | TASK-020 C05 验证范围 | 对 TASK-018 READY_FOR_REVIEW 候选执行最小风险驱动 C05：CNL-C001～C016 追溯、锁定普通构建/测试、公共候选资源边界和 Unicode 17.0.0 官方 NFC 一致性；官方数据仅下载至 `/private/tmp`。失败即返回 C00，不修改实现或测试 | APPROVED | `HDP-APLS-020 Option A` | 2026-09-04 | C05 验证、验证证据与后续正式 C04/Baseline 输入 |
 | DEC-026 | APLS 0.1 实现候选 Git Anchor | 创建一个本地初始 Commit，冻结当前 C05 PASS 的非忽略项目文件；排除 `07_src/target/` 等构建/本地数据；Commit Message 固定为 `chore: freeze APLS 0.1 implementation candidate`。不 Push、不建立 Baseline、不发起 Formal C04 | APPROVED | 项目负责人在唯一下一步上下文中明确“授权”、`HDP-APLS-021 Option A` | 2026-09-04 | Git 候选 Anchor 与后续正式 C04 Target 准备 |
 | DEC-027 | 私有远程同步与后续 AI 接管 | 创建 GitHub 私有仓库 `loocoo2025/apls-language`，同步本地 `main`，以正式 HANDOFF 将后续逻辑 C00 工作交给 Kimi；不授权 Formal C04、Baseline 或 Release | APPROVED | 项目负责人明确要求、`HDP-APLS-023` | 2026-09-04 | GitHub 私有远程、C00 物理会话交接 |
+| DEC-028 | 首次正式 C04 授权 | 批准 `HDP-APLS-022 Option A`：以精确 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` 为唯一只读 Review Target，由全新独立 Session 执行 `FULL_SCOPE` 首次正式 C04，仅写入 `05_reviews/FORMAL_C04_APLS_0_1_CANDIDATE_001.md`；不授权 Baseline Adoption、Release、Formal Seal 或对 Target/源码/测试/设计/Schema/Manifest/Lock 的任何修改 | APPROVED | 项目负责人 2026-09-05 明确回复 `HDP-APLS-022: APPROVED / OPTION: A` | 2026-09-05 | 一次性 Formal C04 Dispatch、正式 Review Record、后续 Baseline 裁决输入 |
+| DEC-029 | 首次正式 C04 重新 Dispatch 方式 | 第一次 Dispatch（`NISR-APLS-C04-022-001`）已消费且被平台中止，无 Review Record、无 Gate Decision、Target 完好；授权由项目负责人手动新建干净会话执行首次正式 C04，C00 提供自包含启动指令；Target、FULL_SCOPE、只读与唯一写入边界不变 | APPROVED | 项目负责人 2026-09-05 明确指示“我新建一个干净会话，然后独立 C04” | 2026-09-05 | 首次正式 C04 手动独立 Session 与结果回收 |
+| DEC-030 | 首次正式 C04 Finding 受控整改组织 | 接受 `FORMAL_C04_APLS_0_1_CANDIDATE_001 = CHANGES_REQUESTED`（F-01～F-09）；授权 C00 组织整改：F-01/F-02（S1）经 Expert Escalation，由全新 C02 Session 形成覆盖全部 Finding 的整改工作包候选与 `HDP-APLS-024`；本授权不含代码修改，批准前不得改动 Compiler/CLI Source、测试、设计、Schema、Manifest 或 Lock | APPROVED | 项目负责人 2026-09-05 明确选择“授权组织整改工作包” | 2026-09-05 | TASK-024 整改工作包、后续精确整改授权 |
+| DEC-031 | 整改工作包批准与 F-02/F-06/F-04/F-08 方向 | 批准 `HDP-APLS-024` 全部推荐：`WP-APLS-C04-REMEDIATION-001` 作为整改依据；Q1=A（0.1 冻结最小直接冲突模型，REQUIRE×PROHIBIT 同 Canonical Condition + 同行为三元组拒绝，新码 `APLS-E1405`）；Q2=B（C01 修订 PRD-007 验收措辞与失败关闭设计一致，纯文档变更）；Q3=A（实现诊断目录 §1.1 封闭根因聚合 + 七码处置表）；Q4=A（建立最小完备集 AC-001～009/SYS-001～009/NFR-001～006/IF-001～003 并落盘 FORMAL_TRACE 边，追溯门禁 PASS 为完成条件）；Q4-a=否（PRD §6 不先补编号，NFR 行 Traces-From 用最直接相关 P0 需求 ID 并注明源自 §6）；分两批整改，不含 Commit/新 Anchor/Baseline/Release 授权 | APPROVED | 项目负责人 2026-09-06 明确“按照你推荐的来” | 2026-09-06 | TASK-024 批次 1/2 整改实施、公共语言收窄（E1405）、诊断目录与 PRD-007 文档变更、需求追溯层建立 |
+| DEC-032 | Rust 工具链安装授权 | 授权在本机安装 rustup + Rust 1.98.0（参考工具链）与 1.86.0（MSRV 核验），并允许 `cargo fetch/build/test --locked` 按 Cargo.lock 联网拉取精确锁定依赖；不授权变更依赖闭包、版本或 Lock | APPROVED | 项目负责人 2026-09-06 明确选择“授权安装 Rust 工具链” | 2026-09-06 | TASK-024 批次 1 实施与验证环境前提 |
+| DEC-033 | 整改收口三项裁决与新 Anchor | ① 接受 C01 对 `system_architecture.md` §8 的扩展修正（F-06 同根因）；② 授权修正 `APLS_0.1_ZH_CN_GRAMMAR.ebnf` 第 3 行过期状态注释（仅注释，不动语法产生式）；③ 参照 DEC-026 模式授权创建一个包含全部整改与治理落盘的新精确 Git Anchor 作为 Finding 关闭复审 Target；随后 C00 发起全新独立 C04 关闭复审；不含 Push/Baseline/Release/Formal Seal 授权 | APPROVED | 项目负责人 2026-09-06 明确选择“三项全部批准” | 2026-09-06 | TASK-024 收口、新 Review Target、Finding 关闭复审 |
 
 ## 当前有效决定摘要
 
@@ -52,6 +58,7 @@
 - 当前验证：`DEC-025` 已授权 TASK-020 只执行 T0/T1 风险驱动 C05、普通锁定验证、公共资源边界和 Unicode 17.0.0 官方一致性；失败时不得由 C05 修改实现或测试。
 - 候选冻结：`DEC-026` 已授权创建一个本地初始 Commit 作为当前 C05 PASS 候选的不可变 Git Anchor；该动作不授权 Push、正式 C04、Baseline 或 Release。
 - 远程与交接：`DEC-027` 授权 GitHub 私有同步和 Kimi C00 接管；这不构成 `HDP-APLS-022` 批准，Kimi C00 也不能在同一会话中冒充正式 C04。
+- 首次正式 C04：`DEC-028` 已批准 `HDP-APLS-022 Option A`；首次 Dispatch 中断后由 `DEC-029` 授权项目负责人手动新建干净会话执行，Target 与边界不变；Baseline Adoption 仍须另行裁决。
 - 复审范围：`LEAN` 默认 `DELTA_ONLY`；已关闭且未变化、未受影响的事项继承结论，不因出现在完整 Target 中而重复审查。
 - 用户界面：用户默认不学习、不查看 DSL、AST 或 IR；只在主动检查/调试时展示 Normalized Meaning 或内部产物。
 - 详细设计：旧 Grammar、词法和 `apls-ir-0.1` 已被方向变更替代，仅保留为 Legacy DSL 参考；当前 CNL-to-IR 契约为 `apls-cnl-ir-0.1`。

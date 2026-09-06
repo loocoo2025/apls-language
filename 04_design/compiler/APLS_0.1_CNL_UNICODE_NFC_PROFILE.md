@@ -1,12 +1,12 @@
 # APLS 0.1 CNL Unicode NFC 实现 Profile
 
 - 设计 ID：`DES-APLS-CNL-UNICODE-001`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-015`、`DEC-020`、`DEC-021`、`DES-APLS-ZH-CNL-001`
 - 关闭 Finding：`BF-07`
 
-> 本文冻结完整 NFC 的数据版本、算法来源、唯一机器声明落点和依赖候选；当前没有修改或安装依赖，也没有修改 `Cargo.toml` / `Cargo.lock`。
+> 本文冻结完整 NFC 的数据版本、算法来源、唯一机器声明落点和依赖边界；`unicode-normalization =0.1.25, default-features=false` 依赖已由 `DEC-023`（`HDP-APLS-018 Option A`）批准，实际 Feature 闭包由 `DEC-024` 接受；版本、Checksum 与 Lock 不变。
 
 ## 1. 规范选择
 

@@ -136,7 +136,7 @@ APLS 采用“表面语言 + 规范语义模型”分离：
 
 ### 5.6 自由自然语言边界
 
-- 符合 `apls-zh-CN-0.1` 的受控自然语言可以作为规范 Source；未被 Profile 接受的自由自然语言只进入 `informative`、`rationale`、`open` 或 `unknown` 类字段；
+- 符合 `apls-zh-CN-0.1` 的受控自然语言可以作为规范 Source；未被 Profile 接受的自由自然语言只进入 `informative` 或 `rationale` 类说明字段；`unknown` 与 `open` 内容不进入 Verified IR，由稳定诊断在编译期拒绝并定位；
 - 自由自然语言不能充当类型、条件、目标引用、时间约束或状态转换的规范定义；
 - 编译器不得调用 LLM 把说明文本转换成规范语义；
 - AI 建议必须形成新的显式 Source 变更后重新编译。
@@ -176,14 +176,14 @@ source_map
 
 ### 6.3 规范性分类
 
-每类信息必须机械区分：
+Verified IR 机械区分 `normative` 与 `informative` 两类；`unknown` 与 `open` 内容不进入 Verified IR，由稳定诊断在编译期拒绝并定位（与 PRD-007 修订后验收一致，`DEC-031` / `HDP-APLS-024` Q2=B）：
 
 | 分类 | 是否影响语义 | 编译规则 |
 |---|---:|---|
 | `normative` | 是 | 必须结构化、类型正确且可验证 |
 | `informative` | 否 | 可保留文本，但不能改变规范结果 |
-| `unknown` | 否，表示知识缺失 | 若被规范字段依赖则编译失败 |
-| `open` | 否，表示待决事项 | 若阻断规范完整性则编译失败 |
+| `unknown` | 否，表示知识缺失 | 不进入 IR；编译期以稳定诊断拒绝并定位 |
+| `open` | 否，表示待决事项 | 不进入 IR；编译期以稳定诊断拒绝并定位 |
 
 ### 6.4 身份、引用与排序
 
@@ -238,7 +238,7 @@ optional_fix_suggestion
 ### Agent Consumer
 
 - 默认只消费 `verified` Canonical IR；
-- 可以读取 `informative/open/unknown`，但必须保留其分类；
+- 可以读取 `informative` 类说明内容，但必须保留其分类；`unknown` 与 `open` 内容不进入 Verified IR（编译期已以稳定诊断拒绝），不存在可消费实例；
 - 不得把建议或推断写回规范事实，除非经过新的受控 Source 变更。
 
 ### Graph Consumer

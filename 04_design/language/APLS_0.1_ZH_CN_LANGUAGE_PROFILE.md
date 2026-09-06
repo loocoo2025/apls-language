@@ -2,7 +2,7 @@
 
 - 设计 ID：`DES-APLS-ZH-CNL-001`
 - Profile ID：`apls-zh-CN-0.1`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-004`、`DEC-014`、`DEC-015`、`DEC-017`、`DEC-021`、`ARCH-APLS-CNL-001`、`DES-APLS-CNL-AMB-001`
 - 配套 Grammar：`APLS_0.1_ZH_CN_GRAMMAR.ebnf`
@@ -10,7 +10,7 @@
 - 配套语义验证：`APLS_0.1_CNL_SEMANTIC_VALIDATION_PROFILE.md`
 - 配套诊断：`../diagnostics/APLS_0.1_CNL_DIAGNOSTICS.md`
 
-> 本文定义候选公开语言接受边界，不是 Baseline，不授权修改 Compiler Source。
+> 本文定义当前公开语言接受边界，已由 `DEC-023`（`HDP-APLS-018 Option A`）采用为 `TASK-018` 实现输入；不是 Baseline。
 
 ## 1. Profile 范围
 

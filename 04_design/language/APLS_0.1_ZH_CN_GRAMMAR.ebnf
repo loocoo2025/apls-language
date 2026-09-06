@@ -1,6 +1,6 @@
 (* APLS 0.1 Simplified Chinese Controlled Natural Language Grammar
    Grammar ID: GRAM-APLS-ZH-CNL-001
-   Status: TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018
+   Status: ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023
    This is the sole candidate public surface grammar for apls-zh-CN-0.1.
    It does not authorize implementation and is not a product baseline.
    The Controlled Lexer skips permitted structural spacing at ordinary token

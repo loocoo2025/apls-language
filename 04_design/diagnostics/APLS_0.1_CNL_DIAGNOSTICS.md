@@ -1,7 +1,7 @@
 # APLS 0.1 CNL 诊断目录
 
 - 设计 ID：`DES-APLS-CNL-DIAG-001`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-004`、`DEC-014`、`DEC-015`、`DEC-017`、`DEC-021`、`DES-APLS-ZH-CNL-001`、`DES-APLS-CNL-FRAME-001`、`DES-APLS-CNL-SEMVAL-001`
 - 适用范围：`apls-zh-CN-0.1` Source 到 Typed Semantic Frame
@@ -96,8 +96,8 @@ optional_fix_suggestions
 | `APLS-E1102` | 旧 DSL Grammar 的多个合法解析或 Parser 冲突 | 最小分歧文本 | 旧兼容路径修正规则；CNL 不因中间候选多解发出此 Code |
 | `APLS-E1103` | 句式缺少必需结构或 Semantic Role | 缺失点或不完整短语 | 补充主体、对象、值或时限 |
 | `APLS-E1104` | 首句缺失或 Profile 声明不精确 | 首句 | 使用固定 Profile 声明 |
-| `APLS-E1105` | 使用英文/混合语法或未登记自然语言句式 | 整句最小不匹配段 | 改为 `apls-zh-CN-0.1` 句式 |
-| `APLS-E1106` | 一个句子形成多个主 Frame 或并列行为 | 并列连接范围 | 拆为多个规范句 |
+| `APLS-E1105` | 使用英文/混合语法或未登记自然语言句式（`0.1_RESERVED_NOT_EMITTED`） | 整句最小不匹配段 | 改为 `apls-zh-CN-0.1` 句式 |
+| `APLS-E1106` | 一个句子形成多个主 Frame 或并列行为（`0.1_RESERVED_NOT_EMITTED`） | 并列连接范围 | 拆为多个规范句 |
 
 ## 4. 术语与引用
 
@@ -105,9 +105,9 @@ optional_fix_suggestions
 |---|---|---|---|
 | `APLS-E1201` | 术语或引用没有声明候选 | 引用文本 | 先声明或修正名称 |
 | `APLS-E1202` | 声明名或别名重复 | 后一声明名 | 使用唯一名称；首声明为 Related |
-| `APLS-E1203` | 引用候选无法由 CNL Profile 支持的绑定规则继续分析 | 引用文本 | 声明、修正或使用带引号完整名称；不得仅因中间候选多于一个发出 |
+| `APLS-E1203` | 引用候选无法由 CNL Profile 支持的绑定规则继续分析（0.1 发射点：零候选聚合时对同 Span 绑定失败派生该通用根因，并被 §1.1 封闭抑制表抑制，不直接出现在公共输出） | 引用文本 | 声明、修正或使用带引号完整名称；不得仅因中间候选多于一个发出 |
 | `APLS-E1204` | 引用类别与 Grammar 角色不匹配 | 引用文本 | 使用正确类别术语 |
-| `APLS-E1205` | 使用未声明同义词、缩写、繁简转换或近似名称 | 引用文本 | 显式声明别名或使用原名 |
+| `APLS-E1205` | 使用未声明同义词、缩写、繁简转换或近似名称（`0.1_RESERVED_NOT_EMITTED`） | 引用文本 | 显式声明别名或使用原名 |
 | `APLS-E1206` | 动作与目标不匹配动作声明 | 动作短语 | 使用已声明的 Action/Target 配对 |
 | `APLS-E1207` | 状态不属于指定实体或初始状态不在状态集 | 状态引用 | 使用该实体已声明状态 |
 
@@ -119,17 +119,20 @@ optional_fix_suggestions
 | `APLS-E1302` | 使用“它”“该设备”“前者”等未冻结指代 | 指代词 | 重述精确术语 |
 | `APLS-E1303` | 主体、动作对象或属性所属缺失 | 缺失点/短语 | 显式补全角色 |
 | `APLS-E1304` | 模态不在 `必须/不得/禁止` 内 | 模态短语 | 选择一个已定义模态 |
-| `APLS-E1305` | 使用首版不支持的否定或并列作用域结构 | 否定/连接范围 | 拆句或改用支持结构 |
+| `APLS-E1305` | 使用首版不支持的否定或并列作用域结构（0.1 发射点：Grammar Terminal Finding 落在固定并列连接 Token 于条件之外的不可继续位置） | 否定/连接范围 | 拆句或改用支持结构 |
 | `APLS-E1306` | 使用 `或者`、嵌套条件或一般自然语言否定 | 对应连接词/范围 | 改为独立规则或受支持合取 |
 | `APLS-E1307` | 时间参考、时限或先后关系不确定 | 时间短语 | 给出事件与精确时长 |
-| `APLS-E1308` | 数值缺少唯一类型或必需单位 | 数值 | 补充单位或属性类型声明 |
-| `APLS-E1309` | 句子依赖跨句省略、上下文或领域常识 | 依赖范围 | 在本句重述完整事实 |
+| `APLS-E1308` | 数值缺少唯一类型或必需单位（0.1 发射点：Type/Unit 阶段属性声明要求单位而右值为无单位数值） | 数值 | 补充单位或属性类型声明 |
 | `APLS-E1310` | 全部有效候选规范化后仍有两个或以上不等价 Canonical Frame | 最小最终语义分歧范围 | 补充能排除分歧的精确信息；可使用引号或拆句 |
 | `APLS-E1401` | Property 类型、声明单位、比较运算符或右值 Literal 不满足封闭兼容矩阵 | 冲突的单位、运算符或右值 | 按 Property 类型使用唯一允许的值与单位 |
 | `APLS-E1402` | State 在显式 Transition 拓扑中不能从初始状态到达 | 不可达 State 的声明名 | 增加合法进入路径或移除不可达状态 |
 | `APLS-E1403` | 相同实体、源状态与规范 Trigger 要求进入多个不同目标状态 | 稳定排序后的第一条冲突 Transition | 使 Trigger 或目标状态互不冲突 |
+| `APLS-E1404` | Transition 源状态与目标状态必须彼此不同（`DES-APLS-CNL-FRAME-001` §5.3） | 该 Transition 句的状态引用短语 | 使源状态与目标状态不同 |
+| `APLS-E1405` | 相同 Canonical Condition 与相同行为（actor/action/target）的 Rule 同时出现 `必须`（require）与 `禁止/不得`（prohibit）模态（`DES-APLS-CNL-SEMVAL-001` §6.4） | 稳定排序后的第一条冲突 Rule 句，其余冲突句为 Related Span | 使冲突规则的模态、条件或行为互不重叠 |
 
-`APLS-E1310` 的机器 Payload 固定为 Schema 中的 `ambiguity` 类型：`outcome=AMBIGUOUS`、`differing_roles` 和恰好两个 Witness。所有 Canonical Frame 等价类先按不含 Provenance 的 Canonical Semantic Payload Byte 升序，只公开前两个类的见证；这只是确定性截断，不是语义选择。
+> 七码发射状态处置（`HDP-APLS-024` Q3=A / `DEC-031`）：`E1203`、`E1305`、`E1308` 已补实现（发射点见上表标注）；`E1105`、`E1106`、`E1205` 标记 `0.1_RESERVED_NOT_EMITTED`（0.1 Grammar 与绑定规则下无 Terminal Finding 来源，根因身份保留不复用）；`E1309`（跨句省略/上下文依赖）在 0.1 下不存在可由候选失败证据机械识别的来源，经同批准自 0.1 目录删除并注明版本边界，根因身份保留不复用，后续版本恢复须重新评审。
+
+`APLS-E1310` 的机器 Payload 固定为 Schema 中的 `ambiguity` 类型：`outcome=AMBIGUOUS`、`differing_roles` 和恰好两个 Witness。所有 Canonical Frame 等价类先按不含 Provenance、**含派生 `id` 字段**的完整 Canonical Semantic Payload Byte 升序（`id` 由 Payload 确定性派生，等价类排序与 Witness 选择均使用该完整字节序），只公开前两个类的见证；这只是确定性截断，不是语义选择。声明路径的等价类分组与见证选择使用同一规则：声明语义载荷（字段集与 Graph 声明值一致，含派生 `id`，不含 Provenance/Span）的完整 Canonical Byte 升序。
 
 每个 Witness 只公开 `frame_kind`、`semantic_fingerprint` 和各分歧 Role 的 `role_fingerprints`，不公开 AST、IR 或完整内部 Frame。Fingerprint Preimage 分别为：
 

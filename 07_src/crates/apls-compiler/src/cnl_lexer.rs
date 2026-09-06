@@ -325,14 +325,12 @@ fn skip_spacing(source: &str, mut at: usize, end: usize) -> usize {
     at
 }
 
-pub fn lex_and_enumerate(
+fn build_edges(
     sentence: &Sentence<'_>,
     pass_rank: u8,
     symbols: &[SymbolRef],
-    ledger: &mut Ledger,
-    path: &str,
     source: &str,
-) -> Result<Vec<TokenStream>, Diagnostic> {
+) -> BTreeSet<Edge> {
     let mut edges = BTreeSet::new();
     let mut at = sentence.span.start_byte;
     while at < sentence.span.end_byte {
@@ -436,6 +434,97 @@ pub fn lex_and_enumerate(
         let ch = source[at..].chars().next().expect("character boundary");
         at += ch.len_utf8();
     }
+    edges
+}
+
+pub(crate) struct LexicalCoverage {
+    covered: Vec<bool>,
+    base: usize,
+    pub(crate) first_stall: Option<ByteSpan>,
+}
+
+impl LexicalCoverage {
+    pub(crate) fn covers(&self, span: ByteSpan) -> bool {
+        span.start_byte >= self.base
+            && span.end_byte <= self.base + self.covered.len()
+            && self.covered[span.start_byte - self.base..span.end_byte - self.base]
+                .iter()
+                .all(|covered| *covered)
+    }
+}
+
+/// Lattice 直接证据：Edge 覆盖的 Byte 区间与首个无法继续的位置。
+/// 只描述候选词法 Lattice 的机械覆盖事实，不做最长匹配或评分。
+pub(crate) fn lexical_coverage(
+    sentence: &Sentence<'_>,
+    pass_rank: u8,
+    symbols: &[SymbolRef],
+    source: &str,
+) -> LexicalCoverage {
+    let edges = build_edges(sentence, pass_rank, symbols, source);
+    let base = sentence.span.start_byte;
+    let end = sentence.span.end_byte;
+    let mut covered = vec![false; end - base];
+    let mut by_start = std::collections::BTreeMap::<usize, Vec<&Edge>>::new();
+    for edge in &edges {
+        for byte in edge.start..edge.end {
+            covered[byte - base] = true;
+        }
+        by_start.entry(edge.start).or_default().push(edge);
+    }
+    let mut reached = BTreeSet::new();
+    let mut queue = std::collections::VecDeque::from([skip_spacing(source, base, end)]);
+    let mut stall = None;
+    while let Some(at) = queue.pop_front() {
+        if at == end || !reached.insert(at) {
+            continue;
+        }
+        match by_start.get(&at) {
+            Some(options) => {
+                for edge in options {
+                    queue.push_back(skip_spacing(source, edge.end, end));
+                }
+            }
+            None => {
+                stall = Some(stall.map_or(at, |known: usize| known.min(at)));
+            }
+        }
+    }
+    let first_stall = stall.map(|at| {
+        let mut stop = edges
+            .iter()
+            .filter(|edge| edge.start > at)
+            .map(|edge| edge.start)
+            .min()
+            .unwrap_or(end);
+        while stop > at {
+            let ch = source[..stop]
+                .chars()
+                .next_back()
+                .expect("character boundary");
+            if !is_spacing(ch) {
+                break;
+            }
+            stop -= ch.len_utf8();
+        }
+        ByteSpan::new(at, stop.max(at + 1))
+    });
+    LexicalCoverage {
+        covered,
+        base,
+        first_stall,
+    }
+}
+
+pub fn lex_and_enumerate(
+    sentence: &Sentence<'_>,
+    pass_rank: u8,
+    symbols: &[SymbolRef],
+    ledger: &mut Ledger,
+    path: &str,
+    source: &str,
+) -> Result<Vec<TokenStream>, Diagnostic> {
+    let edges = build_edges(sentence, pass_rank, symbols, source);
     for edge in &edges {
         ledger.add(
             Resource::LatticeEdges,

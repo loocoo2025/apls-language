@@ -4,7 +4,7 @@
 - 版本：`0.1`
 - 日期：`2026-09-02`
 - 责任角色：`C01`
-- 当前事实依据：`DEC-003`、`DEC-004`、`DEC-014`、`DEC-015`、`DEC-017`
+- 当前事实依据：`DEC-003`、`DEC-004`、`DEC-014`、`DEC-015`、`DEC-017`、`DEC-031`
 
 ## 1. 产品目标
 
@@ -97,7 +97,7 @@
 
 - Agent 默认消费已验证的 Canonical IR，而不是自行解释未经验证的源文本。
 - 输出必须显式区分规范事实、说明文本、未知项和未决问题。
-- 验收：IR Schema 能机械区分 normative、informative、unknown 和 open。
+- 验收：IR Schema 机械区分 normative 与 informative；unknown 与 open 内容不得进入 Verified IR，由稳定诊断在编译期拒绝并定位（验收措辞经 `HDP-APLS-024` Q2=B / `DEC-031` 修订，与失败关闭设计一致）。
 
 ### PRD-008 — 编译器式最小工作流
 

@@ -2,12 +2,12 @@
 
 - 设计 ID：`DES-APLS-CNL-IR-001`
 - Schema ID：`apls-cnl-ir-0.1`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-014`～`DEC-019`、`DEC-021`、`DES-APLS-CNL-FRAME-001`、`DES-APLS-CNL-SEMVAL-001`、`DES-APLS-CNL-UNICODE-001`、`DES-APLS-CNL-IR-MAP-001`
 - Schema：`apls-cnl-ir-0.1.schema.json`
 
-> 本文原设计由 `HDP-APLS-015 Option A` / `DEC-019` 批准；标记为 TASK-019 的类型/单位、Unicode、Unit Closure、Condition 与 Source Map 整改是等待 `HDP-APLS-018` 的候选。它不修改旧 `apls-ir-0.1`，不建立 Baseline，也不单独授权 Compiler 实现。
+> 本文原设计由 `HDP-APLS-015 Option A` / `DEC-019` 批准；`TASK-019` 的类型/单位、Unicode、Unit Closure、Condition 与 Source Map 整改已由 `DEC-023`（`HDP-APLS-018 Option A`）采用为实现输入。它不修改旧 `apls-ir-0.1`，不建立 Baseline。
 
 ## 1. 目标与边界
 

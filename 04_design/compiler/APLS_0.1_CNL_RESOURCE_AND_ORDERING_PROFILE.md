@@ -1,12 +1,12 @@
 # APLS 0.1 CNL 候选资源与稳定顺序 Profile
 
 - 设计 ID：`DES-APLS-CNL-RESOURCE-001`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-011`、`DEC-017`、`DEC-020`、`DEC-021`、`WP-APLS-CNL-C03-001`
 - 关闭 Finding：`BF-06`、`BF-10` 中 `APLS-T0007` 计数部分
 
-> 本文不改变 `DEC-020` 已批准的数值，只冻结实现无关的计数对象、稳定顺序、超限位置与 Payload。采用本候选仍需 `HDP-APLS-018`。
+> 本文不改变 `DEC-020` 已批准的数值，只冻结实现无关的计数对象、稳定顺序、超限位置与 Payload。本文已由 `DEC-023`（`HDP-APLS-018 Option A`）采用为实现输入。
 
 ## 1. 公共资源表
 

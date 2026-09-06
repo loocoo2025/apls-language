@@ -53,7 +53,7 @@ Source 包含：
 目标流量高于 2.5 摄氏度
 ```
 
-预期：每句零有效类；最具体根因均为 `APLS-E1401`，不得以 `E1101`、隐式转换或默认单位接受。
+预期：每句零有效类。类型、运算符或显式单位不匹配（`安全检查高于真`、`重试次数等于 3.0`、`运行模式高于『自动』`、`目标流量高于 2.5 摄氏度`）的最具体根因为 `APLS-E1401`；属性声明要求单位而右值为无单位数值（`水箱液位低于 20`、`等待时长不高于 2`、`水温低于 35`）的根因为 `APLS-E1308`（`HDP-APLS-024` Q3=A / `DEC-031` 批准的根因归位）。不得以 `E1101`、隐式转换或默认单位接受。
 
 来源：BF-04/BF-10；防止候选筛选改变最终唯一性。
 
@@ -124,7 +124,7 @@ Fixture Family 覆盖：预组合/分解 Accent、Combining Class 重排、Hangu
 
 构造多个 Token Stream：一条在 Grammar 失败，一条完成 Parse 后在类别/类型失败；以正序、逆序和随机内部枚举执行。
 
-预期：三个执行产生 Byte 完全相同的诊断 Envelope；具体 `E1204/E1401` 在同 Span 抑制派生 `E1101/E1308`；不得提升候选局部概率或只保留第一个错误。
+预期：三个执行产生 Byte 完全相同的诊断 Envelope；聚合按 `DES-APLS-CNL-DIAG-001` §1.1 覆盖三级 Terminal Finding（无 Complete Token Stream 时的 Lattice/Sentence Validator 直接 Finding、各 Stream 的 Grammar Terminal Finding、各候选路径首个失败 Stage 的 Terminal Finding），Canonical JSON 去重后应用封闭抑制表——具体 `E1103/E1104/E1105/E1106/E1201..E1403` 抑制同 Span 派生 `E1101`，`E1201/E1204/E1206/E1207` 抑制同 Span `E1203`，`E1401` 抑制同 Span `E1308`，无其他规则。目录 §6 样例句 `温度高的时候适当降低一点速度。` 产生 E1301+E1303 根因组且不含 E1101；词级根因检测不得命中已声明术语名或固定 Token 内部（如 `“最高水位”` 中的“高”不产生 E1301）。不得提升候选局部概率或只保留第一个错误。
 
 来源：BF-10 与 DEC-017；防止遍历顺序成为隐式消歧器。
 
@@ -201,11 +201,43 @@ canonical_frame_candidates    <= typed_frame_candidates
 
 来源：IIR-APLS-TASK019-REREVIEW-001 NF-02 / BF-10；防止两个公共排序键产生不同 Envelope 和截断集合。
 
+### CNL-C017 — Transition 源状态等于目标状态（E1404）
+
+Source 含 `当…时，“设备”从“运行”进入“运行”。`（源状态与目标状态为同一 State）。
+
+预期：拒绝，唯一诊断码 `APLS-E1404`，Primary Span 指向该 Transition 句的状态引用短语；不复用 `APLS-E1403`（其根因身份仅为同实体/源状态/同 Canonical Trigger 的文档级多目标冲突）。
+
+来源：FORMAL_C04_APLS_0_1_CANDIDATE_001 F-07；防止根因身份漂移。
+
+### CNL-C018 — Rule 的 REQUIRE×PROHIBIT 直接冲突（E1405）
+
+同一实体、相同 Canonical Condition 下针对同一 Action/Target 的一对 `必须` 与 `禁止`（或 `不得`）Rule。
+
+预期：拒绝，恰好一条 `APLS-E1405`，Primary Span 为稳定排序后第一条冲突 Rule 句，另一句为 Related Span，`missing_or_ambiguous_roles=["modality"]`。防过杀：相同模态的重复 Rule 合并接受；不同 Canonical Condition 或不同行为三元组的 Rule 组合不产生 E1405。
+
+来源：PRD-005、FORMAL_C04_APLS_0_1_CANDIDATE_001 F-02（`HDP-APLS-024` Q1=A）；防止矛盾规则进入 Verified IR。
+
+### CNL-C019 — 无单位数值对需单位属性（E1308）
+
+属性声明要求单位（百分比/时长/温度/名义单位）而比较右值为无单位数值，如 `水箱液位低于 20`。
+
+预期：拒绝，根因码 `APLS-E1308`，Primary Span 为该数值；显式单位不匹配仍归 `APLS-E1401`（见 CNL-C003）。
+
+来源：诊断目录 E1308 根因身份（`HDP-APLS-024` Q3=A 补实现）；防止该码成为空承诺。
+
+### CNL-C020 — 条件外并列作用域（E1305）
+
+行为之后出现固定并列连接 Token，如 `当液位低于20%时，系统必须启动水泵并且系统必须停止水泵。`
+
+预期：拒绝，根因码 `APLS-E1305`，Primary Span 为该 `并且` Token；同 Span 的派生 `E1101` 被封闭抑制表抑制。
+
+来源：诊断目录 E1305 根因身份（`HDP-APLS-024` Q3=A 补实现）；`E1309` 在 0.1 无机械识别来源，已从目录删除并注明版本边界，不立样例。
+
 ## 3. 实施时的最小证据边界
 
 `TASK-018` 实施后不要求为矩阵做笛卡尔积。最低证据是：
 
-- CNL-C001～C016 各至少一个黑盒或模块级测试；
+- CNL-C001～C020 各至少一个黑盒或模块级测试；
 - CNL-C002/C003 使用等价类代表覆盖矩阵每一行；
 - CNL-C009 额外运行 Unicode 17.0.0 官方 Normalization Conformance 数据；
 - CNL-C012A/C 使用确定生成器而不把百万级文本纳入版本库；CNL-C012B 只用私有 Module-level Ledger 注入，不增加产品测试接口；

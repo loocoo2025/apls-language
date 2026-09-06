@@ -8,7 +8,8 @@ use sha2::{Digest, Sha256};
 use crate::VerifiedArtifact;
 use crate::cnl_ast::*;
 use crate::cnl_lexer::{
-    Sentence, UNICODE_DATA_VERSION, lex_and_enumerate, valid_term, validate_and_split,
+    Sentence, UNICODE_DATA_VERSION, lex_and_enumerate, lexical_coverage, valid_term,
+    validate_and_split,
 };
 use crate::diagnostic::{Diagnostic, OrderedDiagnostics, normalize_diagnostics};
 use crate::pipeline::{CompileOutcome, CompileSuccess, CompileThrough};
@@ -103,7 +104,7 @@ fn compile_inner(
     for sentence in sentences.iter().skip(1) {
         let streams =
             lex_and_enumerate(sentence, 1, &[], &mut ledger, path, source).map_err(one)?;
-        let mut candidates = BTreeSet::new();
+        let mut candidates = BTreeMap::<Vec<u8>, (Declaration, DeclarationWitness)>::new();
         for stream in streams {
             if let Ok(parsed) =
                 crate::apls_grammar::DeclarationEntryParser::new().parse(stream.into_iter().map(Ok))
@@ -120,19 +121,19 @@ fn compile_inner(
                         )
                         .map_err(one)?;
                 }
-                candidates.insert(parsed.value);
+                let witness = DeclarationWitness::new(&parsed.value);
+                candidates
+                    .entry(canonical_bytes(&witness.payload))
+                    .or_insert((parsed.value, witness));
             }
         }
         if candidates.len() > 1 {
-            return Err(one(ambiguity(
-                path,
-                source,
-                sentence.span,
-                "declaration",
-                candidates.iter().map(|v| format!("{v:?}")).collect(),
-            )));
+            let mut classes = candidates.values();
+            let left = &classes.next().expect("two declaration classes").1;
+            let right = &classes.next().expect("two declaration classes").1;
+            return Err(one(left.ambiguity_with(right, path, source, sentence.span)));
         }
-        if let Some(declaration) = candidates.into_iter().next() {
+        if let Some((declaration, _)) = candidates.into_values().next() {
             declaration_sentence_indexes.insert(sentence.index);
             declaration_records.push(DeclRecord {
                 declaration,
@@ -152,105 +153,63 @@ fn compile_inner(
         let streams = lex_and_enumerate(sentence, 2, &graph.symbols, &mut ledger, path, source)
             .map_err(one)?;
         let mut parsed = Vec::new();
-        let mut parse_constraint_error = None;
+        let mut terminal_findings = Vec::new();
         for stream in streams {
-            if let Ok(candidate) =
-                crate::apls_grammar::NormativeEntryParser::new().parse(stream.into_iter().map(Ok))
+            match crate::apls_grammar::NormativeEntryParser::new().parse(stream.into_iter().map(Ok))
             {
-                if let Some(span) = normative_spacing_error(&candidate.value, source) {
-                    parse_constraint_error.get_or_insert_with(|| {
-                        Diagnostic::source(
+                Ok(candidate) => {
+                    if let Some(span) = normative_spacing_error(&candidate.value, source) {
+                        terminal_findings.push(Diagnostic::source(
                             "APLS-E1101",
                             "literal spacing does not match the controlled grammar",
                             path,
                             source,
                             span,
-                        )
-                    });
-                    continue;
-                }
-                let expression_depth = normative_expression_depth(&candidate.value);
-                if expression_depth > crate::limits::MAX_EXPRESSION_DEPTH {
-                    return Err(one(expression_depth_limit(
-                        expression_depth,
-                        sentence.index,
-                        sentence.span,
-                        path,
-                        source,
-                    )));
-                }
-                for span in normative_syntax_node_spans(&candidate.value, sentence.span, source) {
-                    ledger
-                        .add(
-                            Resource::SyntaxNodes,
-                            1,
-                            Some(sentence.index),
-                            Some(span),
+                        ));
+                        continue;
+                    }
+                    let expression_depth = normative_expression_depth(&candidate.value);
+                    if expression_depth > crate::limits::MAX_EXPRESSION_DEPTH {
+                        return Err(one(expression_depth_limit(
+                            expression_depth,
+                            sentence.index,
+                            sentence.span,
                             path,
                             source,
-                        )
-                        .map_err(one)?;
+                        )));
+                    }
+                    for span in normative_syntax_node_spans(&candidate.value, sentence.span, source)
+                    {
+                        ledger
+                            .add(
+                                Resource::SyntaxNodes,
+                                1,
+                                Some(sentence.index),
+                                Some(span),
+                                path,
+                                source,
+                            )
+                            .map_err(one)?;
+                    }
+                    parsed.push(candidate.value);
                 }
-                parsed.push(candidate.value);
+                Err(error) => {
+                    terminal_findings
+                        .extend(grammar_terminal_findings(&error, sentence, path, source));
+                }
             }
         }
         if parsed.is_empty() {
-            if let Some(error) = parse_constraint_error {
-                return Err(one(error));
+            if terminal_findings.is_empty() {
+                terminal_findings = lattice_terminal_findings(sentence, &graph, path, source);
             }
-            return Err(diagnose_unparsed(sentence, &graph, path, source));
+            return Err(aggregate_terminal_findings(terminal_findings));
         }
         if matches!(through, CompileThrough::Parse) {
             continue;
         }
-        let mut canonical = BTreeMap::<Vec<u8>, (Frame, BTreeSet<Provenance>)>::new();
-        let mut failures = Vec::new();
-        for candidate in parsed {
-            match process_candidate(
-                candidate,
-                sentence.index,
-                sentence.span,
-                &graph,
-                path,
-                source,
-                &mut ledger,
-            ) {
-                Ok(frame) => {
-                    let provenance = frame.provenance.clone();
-                    canonical
-                        .entry(canonical_bytes(&frame.value))
-                        .and_modify(|(_, provenances)| {
-                            provenances.insert(provenance.clone());
-                        })
-                        .or_insert_with(|| (frame, BTreeSet::from([provenance])));
-                }
-                Err(error) => failures.push(error),
-            }
-        }
-        if canonical.is_empty() {
-            if failures.is_empty() {
-                failures.push(Diagnostic::source(
-                    "APLS-E1101",
-                    "no valid semantic candidate",
-                    path,
-                    source,
-                    sentence.span,
-                ));
-            }
-            suppress_derived_diagnostics(&mut failures);
-            return Err(failures);
-        }
-        if canonical.len() > 1 {
-            let frames: Vec<_> = canonical.values().take(2).collect();
-            return Err(one(frame_ambiguity(
-                path,
-                source,
-                sentence.span,
-                frames[0],
-                frames[1],
-            )));
-        }
-        let (frame, provenances) = canonical.into_values().next().expect("one canonical frame");
+        let (frame, provenances) =
+            converge_candidates(parsed, sentence, &graph, path, source, &mut ledger)?;
         if frame.kind == "transition" {
             transitions_for_checks.extend(
                 provenances
@@ -275,6 +234,7 @@ fn compile_inner(
     }
     if matches!(through, CompileThrough::Check) {
         validate_transitions(&graph, &transitions_for_checks, path, source)?;
+        validate_rule_conflicts(&frame_groups, path, source)?;
         return Ok(CompileSuccess::Checked);
     }
     let artifact = build_ir(
@@ -877,6 +837,67 @@ fn process_candidate(
     Ok(frame)
 }
 
+/// 候选收敛 Gate：确定性淘汰的候选失败只形成内部证据；任一候选路径产生
+/// Tool Failure（封闭 `APLS-T` 码族）时立即终止整个编译事务，不进入失败聚合
+/// （DES-APLS-CNL-RESOURCE-001 §7）。
+fn converge_candidates(
+    parsed: Vec<NormativeSentence>,
+    sentence: &Sentence<'_>,
+    graph: &Graph,
+    path: &str,
+    source: &str,
+    ledger: &mut Ledger,
+) -> Result<(Frame, BTreeSet<Provenance>), OrderedDiagnostics> {
+    let mut canonical = BTreeMap::<Vec<u8>, (Frame, BTreeSet<Provenance>)>::new();
+    let mut failures = Vec::new();
+    for candidate in parsed {
+        match process_candidate(
+            candidate,
+            sentence.index,
+            sentence.span,
+            graph,
+            path,
+            source,
+            ledger,
+        ) {
+            Ok(frame) => {
+                let provenance = frame.provenance.clone();
+                canonical
+                    .entry(canonical_bytes(&frame.value))
+                    .and_modify(|(_, provenances)| {
+                        provenances.insert(provenance.clone());
+                    })
+                    .or_insert_with(|| (frame, BTreeSet::from([provenance])));
+            }
+            Err(error) if error.code.starts_with("APLS-T") => return Err(one(error)),
+            Err(error) => failures.push(error),
+        }
+    }
+    if canonical.is_empty() {
+        if failures.is_empty() {
+            failures.push(Diagnostic::source(
+                "APLS-E1101",
+                "no valid semantic candidate",
+                path,
+                source,
+                sentence.span,
+            ));
+        }
+        return Err(aggregate_terminal_findings(failures));
+    }
+    if canonical.len() > 1 {
+        let frames: Vec<_> = canonical.values().take(2).collect();
+        return Err(one(frame_ambiguity(
+            path,
+            source,
+            sentence.span,
+            frames[0],
+            frames[1],
+        )));
+    }
+    Ok(canonical.into_values().next().expect("one canonical frame"))
+}
+
 fn bind_candidate(
     sentence: &NormativeSentence,
     graph: &Graph,
@@ -990,7 +1011,7 @@ fn bind_candidate(
 
 fn type_candidate(
     sentence: &NormativeSentence,
-    span: ByteSpan,
+    _span: ByteSpan,
     graph: &Graph,
     path: &str,
     source: &str,
@@ -1057,11 +1078,11 @@ fn type_candidate(
             type_condition(trigger)?;
             if source_state.id == target_state.id {
                 return Err(Diagnostic::source(
-                    "APLS-E1403",
+                    "APLS-E1404",
                     "transition source and target states must differ",
                     path,
                     source,
-                    span,
+                    source_state.span.cover(target_state.span),
                 ));
             }
         }
@@ -1140,11 +1161,11 @@ fn normalize_candidate(
             state_owner_matches(&entity, &target_state, path, source)?;
             if source_state.id == target_state.id {
                 return Err(Diagnostic::source(
-                    "APLS-E1403",
+                    "APLS-E1404",
                     "transition source and target states must differ",
                     path,
                     source,
-                    span,
+                    source_state.span.cover(target_state.span),
                 ));
             }
             (
@@ -1355,6 +1376,17 @@ fn typed_literal(
                 unit_ref,
             ))
         }
+        (
+            ValueType::Integer | ValueType::Decimal | ValueType::Percentage | ValueType::Duration,
+            Some(_),
+            RawLiteralKind::Integer(_) | RawLiteralKind::Decimal(_),
+        ) => Err(Diagnostic::source(
+            "APLS-E1308",
+            "numeric value lacks the unit required by the property declaration",
+            path,
+            source,
+            literal.span,
+        )),
         _ => Err(reject()),
     }
 }
@@ -1607,6 +1639,65 @@ fn validate_transitions(
     }
 }
 
+/// DES-APLS-CNL-SEMVAL-001 §6.4：相同 Canonical Condition 与相同行为三元组
+/// （actor_ref/action_ref/target_ref）的 Rule 同时出现 require 与 prohibit 模态时，
+/// 构成 REQUIRE×PROHIBIT 直接冲突，编译拒绝（APLS-E1405）。
+fn validate_rule_conflicts(
+    frames: &BTreeMap<&'static str, BTreeMap<String, (Value, BTreeSet<Provenance>)>>,
+    path: &str,
+    source: &str,
+) -> Result<(), OrderedDiagnostics> {
+    let mut grouped = BTreeMap::<(Vec<u8>, &str, &str, &str), BTreeMap<&str, Vec<ByteSpan>>>::new();
+    for (_, (value, provenances)) in frames.get("rule").into_iter().flatten() {
+        grouped
+            .entry((
+                canonical_bytes(&value["condition"]),
+                value["behavior"]["actor_ref"].as_str().expect("rule actor"),
+                value["behavior"]["action_ref"]
+                    .as_str()
+                    .expect("rule action"),
+                value["behavior"]["target_ref"]
+                    .as_str()
+                    .expect("rule target"),
+            ))
+            .or_default()
+            .entry(value["modality"].as_str().expect("rule modality"))
+            .or_default()
+            .extend(provenances.iter().map(|provenance| provenance.sentence));
+    }
+    let mut diagnostics = Vec::new();
+    for modalities in grouped.values() {
+        if modalities.len() > 1 {
+            let mut spans: Vec<_> = modalities.values().flatten().copied().collect();
+            spans.sort();
+            spans.dedup();
+            let mut diagnostic = Diagnostic::source(
+                "APLS-E1405",
+                "require and prohibit rules conflict on the same condition and behavior",
+                path,
+                source,
+                spans[0],
+            );
+            diagnostic
+                .missing_or_ambiguous_roles
+                .push("modality".into());
+            for span in spans.into_iter().skip(1) {
+                diagnostic
+                    .related_source_spans
+                    .push(crate::diagnostic::SourceSpan::from_bytes(
+                        path, source, span,
+                    ));
+            }
+            diagnostics.push(diagnostic);
+        }
+    }
+    if diagnostics.is_empty() {
+        Ok(())
+    } else {
+        Err(diagnostics)
+    }
+}
+
 fn build_ir(
     bytes: &[u8],
     path: &str,
@@ -1616,11 +1707,12 @@ fn build_ir(
     transitions: Vec<(Value, Provenance)>,
 ) -> Result<VerifiedArtifact, OrderedDiagnostics> {
     validate_transitions(&graph, &transitions, path, source)?;
+    validate_rule_conflicts(&frames, path, source)?;
     let needs_percent = graph.properties.values().any(|v| v["unit_ref"] == "unit:%")
         || frames
             .values()
             .flatten()
-            .any(|(_, (v, _))| canonical_bytes(v).windows(6).any(|w| w == b"unit:%"));
+            .any(|(_, (v, _))| frame_references_unit(v, "unit:%"));
     let needs_time = graph
         .properties
         .values()
@@ -2523,6 +2615,21 @@ fn collect_quantity_units<'a>(
     }
 }
 
+/// 确定性递归遍历 Frame 规范载荷，仅对 IR Schema 冻结字段 `unit_ref`（Property 声明）
+/// 与 `canonical_unit_ref`（Quantity/Deadline 规范值）做字符串精确相等匹配；
+/// 不匹配任何 `text`/说明字段。
+fn frame_references_unit(value: &Value, unit: &str) -> bool {
+    match value {
+        Value::Array(items) => items.iter().any(|item| frame_references_unit(item, unit)),
+        Value::Object(object) => object.iter().any(|(key, child)| {
+            (matches!(key.as_str(), "unit_ref" | "canonical_unit_ref")
+                && child.as_str() == Some(unit))
+                || frame_references_unit(child, unit)
+        }),
+        _ => false,
+    }
+}
+
 fn validate_ir_condition<'a>(
     condition: &'a Value,
     entity_ids: &BTreeSet<&'a str>,
@@ -2991,46 +3098,182 @@ fn hex_bytes(bytes: &[u8]) -> String {
 fn one(diagnostic: Diagnostic) -> OrderedDiagnostics {
     vec![diagnostic]
 }
+/// DES-APLS-CNL-DIAG-001 §1.1 第 4 条的封闭抑制表：仅以下三条规则，
+/// 且必须作用于同一 Primary Span；不存在其他隐式优先级。
 fn suppress_derived_diagnostics(diagnostics: &mut OrderedDiagnostics) {
-    let specific_spans: BTreeSet<_> = diagnostics
-        .iter()
-        .filter(|diagnostic| !matches!(diagnostic.code.as_str(), "APLS-E1101" | "APLS-E1308"))
-        .filter_map(|diagnostic| diagnostic.primary_source_span.clone())
-        .collect();
+    let spans_of = |predicate: &dyn Fn(&Diagnostic) -> bool| -> BTreeSet<(String, usize, usize)> {
+        diagnostics
+            .iter()
+            .filter(|diagnostic| predicate(diagnostic))
+            .filter_map(|diagnostic| diagnostic.primary_source_span.as_ref())
+            .map(|span| (span.logical_path.clone(), span.start_byte, span.end_byte))
+            .collect()
+    };
+    let specific = spans_of(&|diagnostic| {
+        diagnostic
+            .code
+            .strip_prefix("APLS-E")
+            .and_then(|number| number.parse::<u32>().ok())
+            .is_some_and(|number| {
+                (1103..=1106).contains(&number) || (1201..=1403).contains(&number)
+            })
+    });
+    let binding_specific = spans_of(&|diagnostic| {
+        matches!(
+            diagnostic.code.as_str(),
+            "APLS-E1201" | "APLS-E1204" | "APLS-E1206" | "APLS-E1207"
+        )
+    });
+    let unit_specific = spans_of(&|diagnostic| diagnostic.code == "APLS-E1401");
     diagnostics.retain(|diagnostic| {
-        !matches!(diagnostic.code.as_str(), "APLS-E1101" | "APLS-E1308")
-            || diagnostic
-                .primary_source_span
-                .as_ref()
-                .is_none_or(|span| !specific_spans.contains(span))
+        let span = diagnostic
+            .primary_source_span
+            .as_ref()
+            .map(|span| (span.logical_path.clone(), span.start_byte, span.end_byte));
+        match diagnostic.code.as_str() {
+            "APLS-E1101" => span.is_none_or(|span| !specific.contains(&span)),
+            "APLS-E1203" => span.is_none_or(|span| !binding_specific.contains(&span)),
+            "APLS-E1308" => span.is_none_or(|span| !unit_specific.contains(&span)),
+            _ => true,
+        }
     });
 }
-fn diagnose_unparsed(
+
+/// DES-APLS-CNL-DIAG-001 §1.1：零有效候选时对全部 Terminal Finding 取并集，
+/// 按 `(code,primary_span,related_spans,missing_or_ambiguous_roles,candidate_symbols,payload)`
+/// 的 Canonical JSON Byte 去重（与发现顺序无关），再应用封闭抑制表。
+/// 绑定阶段的引用失败（E1204/E1207）同 Span 派生通用根因 E1203，
+/// 随即被封闭抑制表抑制，公共输出不变（目录抑制链要求该码存在发射点）。
+fn aggregate_terminal_findings(findings: Vec<Diagnostic>) -> OrderedDiagnostics {
+    let mut expanded = Vec::new();
+    for diagnostic in findings {
+        if matches!(diagnostic.code.as_str(), "APLS-E1204" | "APLS-E1207")
+            && diagnostic.primary_source_span.is_some()
+        {
+            let mut derived = Diagnostic::tool(
+                "APLS-E1203",
+                "reference candidates cannot continue through the supported binding rules",
+            );
+            derived.primary_source_span = diagnostic.primary_source_span.clone();
+            expanded.push(derived);
+        }
+        expanded.push(diagnostic);
+    }
+    let mut by_key = BTreeMap::<Vec<u8>, Diagnostic>::new();
+    for mut diagnostic in expanded {
+        diagnostic.candidate_symbols.sort();
+        diagnostic.candidate_symbols.dedup();
+        diagnostic.fix_suggestions.sort();
+        diagnostic.fix_suggestions.dedup();
+        diagnostic
+            .missing_or_ambiguous_roles
+            .sort_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
+        diagnostic.missing_or_ambiguous_roles.dedup();
+        diagnostic.related_source_spans.sort();
+        diagnostic.related_source_spans.dedup();
+        let key = canonical_bytes(&json!({
+            "candidate_symbols": &diagnostic.candidate_symbols,
+            "code": &diagnostic.code,
+            "missing_or_ambiguous_roles": &diagnostic.missing_or_ambiguous_roles,
+            "payload": &diagnostic.payload,
+            "primary_source_span": &diagnostic.primary_source_span,
+            "related_source_spans": &diagnostic.related_source_spans,
+        }));
+        let diagnostic_bytes = serde_json::to_vec(&diagnostic).unwrap_or_default();
+        by_key
+            .entry(key)
+            .and_modify(|existing| {
+                if diagnostic_bytes < serde_json::to_vec(&*existing).unwrap_or_default() {
+                    *existing = diagnostic.clone();
+                }
+            })
+            .or_insert(diagnostic);
+    }
+    let mut aggregated: Vec<_> = by_key.into_values().collect();
+    suppress_derived_diagnostics(&mut aggregated);
+    aggregated
+}
+
+/// 每条 Complete Token Stream 的 Grammar Terminal Finding：首个无法继续位置的
+/// 通用 E1101，外加可由固定 Token 身份机械归类的具体根因——符号引用 Token 无法
+/// 继续为引用类别不匹配（E1204）；固定并列连接词 `并且` 在条件之外无法继续为
+/// 首版不支持的并列作用域结构（E1305）。
+fn grammar_terminal_findings(
+    error: &lalrpop_util::ParseError<usize, Token, ()>,
+    sentence: &Sentence<'_>,
+    path: &str,
+    source: &str,
+) -> Vec<Diagnostic> {
+    let (span, specific) = match error {
+        lalrpop_util::ParseError::UnrecognizedToken { token, .. }
+        | lalrpop_util::ParseError::ExtraToken { token } => {
+            let span = ByteSpan::new(token.0, token.2);
+            let specific = match &token.1 {
+                Token::EntityRef(_)
+                | Token::PropertyRef(_)
+                | Token::ActionRef(_)
+                | Token::EventRef(_)
+                | Token::StateRef(_)
+                | Token::UnitRef(_) => Some((
+                    "APLS-E1204",
+                    "reference category does not match the grammar role",
+                )),
+                Token::Fixed(FixedToken::Conjunction) => Some((
+                    "APLS-E1305",
+                    "coordination or negation scope is not supported outside a condition",
+                )),
+                _ => None,
+            };
+            (span, specific)
+        }
+        lalrpop_util::ParseError::UnrecognizedEof { location, .. }
+        | lalrpop_util::ParseError::InvalidToken { location } => (
+            ByteSpan::new(
+                (*location).min(sentence.span.end_byte),
+                sentence.span.end_byte,
+            ),
+            None,
+        ),
+        lalrpop_util::ParseError::User { .. } => (sentence.span, None),
+    };
+    let mut findings = vec![Diagnostic::source(
+        "APLS-E1101",
+        "sentence does not match the APLS 0.1 controlled-natural-language grammar",
+        path,
+        source,
+        span,
+    )];
+    if let Some((code, message)) = specific {
+        findings.push(Diagnostic::source(code, message, path, source, span));
+    }
+    findings
+}
+
+/// 无 Complete Token Stream 时的 Lattice/Sentence Validator 直接 Finding：
+/// 引号术语无声明候选（E1201，符号表证据）；目录根因身份冻结的词级检测
+/// （E1301/E1302/E1304/E1306/E1307），但排除已被 Lattice Edge 覆盖或位于
+/// 引号内的出现位置（不得命中已声明术语名或固定 Token 内部）；停滞位置的
+/// 通用 E1101，以及无其他同 Span 发现时的主体/所属缺失（E1303）。
+fn lattice_terminal_findings(
     sentence: &Sentence<'_>,
     graph: &Graph,
     path: &str,
     source: &str,
-) -> OrderedDiagnostics {
-    fn word_span(sentence: &Sentence<'_>, word: &str) -> Option<ByteSpan> {
-        sentence.text.find(word).map(|offset| {
-            ByteSpan::new(
-                sentence.span.start_byte + offset,
-                sentence.span.start_byte + offset + word.len(),
-            )
+) -> Vec<Diagnostic> {
+    let coverage = lexical_coverage(sentence, 2, &graph.symbols, source);
+    let quoted = quoted_text_spans(sentence);
+    let in_quotes = |span: ByteSpan| {
+        quoted.iter().any(|(outer, _)| {
+            span.start_byte >= outer.start_byte && span.end_byte <= outer.end_byte
         })
-    }
+    };
+    let mut findings = Vec::new();
 
-    let mut diagnostics = Vec::new();
-
-    let mut quoted_at = 0;
-    while let Some(open_relative) = sentence.text[quoted_at..].find('“') {
-        let open = quoted_at + open_relative;
-        let content_start = open + '“'.len_utf8();
-        let Some(close_relative) = sentence.text[content_start..].find('”') else {
-            break;
-        };
-        let close = content_start + close_relative;
-        let name = &sentence.text[content_start..close];
+    for (outer, inner) in &quoted {
+        if !source[outer.start_byte..].starts_with('“') {
+            continue;
+        }
+        let name = &source[inner.start_byte..inner.end_byte];
         if !graph
             .symbols
             .iter()
@@ -3041,189 +3284,106 @@ fn diagnose_unparsed(
                 "quoted term has no declaration candidate",
                 path,
                 source,
-                ByteSpan::new(
-                    sentence.span.start_byte + open,
-                    sentence.span.start_byte + close + '”'.len_utf8(),
-                ),
+                *outer,
             );
             diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
             diagnostic
                 .missing_or_ambiguous_roles
                 .push("declared_term".into());
-            diagnostics.push(diagnostic);
+            findings.push(diagnostic);
         }
-        quoted_at = close + '”'.len_utf8();
     }
 
-    for operator in ["不等于", "不高于", "不低于", "等于", "低于", "高于"] {
-        let Some(operator_at) = sentence.text.find(operator) else {
-            continue;
-        };
-        let before = &sentence.text[..operator_at];
-        let start = before.rfind("并且").map_or(0, |index| index + "并且".len());
-        let mut term = before[start..].trim_matches([' ', '\n', '\r']);
-        for prefix in ["安全要求：当", "安全要求：如果", "安全要求：", "当", "如果"]
-        {
-            if let Some(rest) = term.strip_prefix(prefix) {
-                term = rest.trim_matches([' ', '\n', '\r']);
-                break;
-            }
-        }
-        let (name, local_start, local_end) = if term.starts_with('“') && term.ends_with('”') {
-            (
-                &term['“'.len_utf8()..term.len() - '”'.len_utf8()],
-                before.find(term).unwrap_or(start),
-                before.find(term).unwrap_or(start) + term.len(),
-            )
-        } else {
-            let local_start = before.rfind(term).unwrap_or(start);
-            (term, local_start, local_start + term.len())
-        };
-        if !name.is_empty() {
-            let candidates: Vec<_> = graph
-                .symbols
-                .iter()
-                .filter(|symbol| symbol.display_name == name)
-                .collect();
+    let mut word_finding = |word: &str, code: &str, message: &str, role: &str| {
+        let mut at = 0;
+        while let Some(relative) = sentence.text[at..].find(word) {
+            let start = at + relative;
             let span = ByteSpan::new(
-                sentence.span.start_byte + local_start,
-                sentence.span.start_byte + local_end,
+                sentence.span.start_byte + start,
+                sentence.span.start_byte + start + word.len(),
             );
-            if candidates.is_empty() {
-                let mut diagnostic = Diagnostic::source(
-                    "APLS-E1201",
-                    "condition term has no declaration candidate",
-                    path,
-                    source,
-                    span,
-                );
-                diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-                diagnostic
-                    .missing_or_ambiguous_roles
-                    .push("condition_property".into());
-                diagnostics.push(diagnostic);
-            } else if !candidates
-                .iter()
-                .any(|symbol| symbol.kind == SymbolKind::Property)
-            {
-                let mut diagnostic = Diagnostic::source(
-                    "APLS-E1204",
-                    "condition comparison requires a declared property",
-                    path,
-                    source,
-                    span,
-                );
-                diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-                diagnostic
-                    .missing_or_ambiguous_roles
-                    .push("condition_property".into());
-                diagnostics.push(diagnostic);
+            at = start + word.len();
+            if coverage.covers(span) || in_quotes(span) {
+                continue;
             }
-        }
-        break;
-    }
-    for word in ["适当", "一点", "大概", "差不多", "高", "低"] {
-        if let Some(span) = word_span(sentence, word) {
-            let mut diagnostic = Diagnostic::source(
-                "APLS-E1301",
-                "vague threshold, degree, or change amount has no computable meaning",
-                path,
-                source,
-                span,
-            );
+            let mut diagnostic = Diagnostic::source(code, message, path, source, span);
             diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-            diagnostic
-                .missing_or_ambiguous_roles
-                .push("precise_value".into());
-            diagnostics.push(diagnostic);
+            diagnostic.missing_or_ambiguous_roles.push(role.into());
+            findings.push(diagnostic);
+            return;
         }
+    };
+    for word in ["适当", "一点", "大概", "差不多", "高", "低"] {
+        word_finding(
+            word,
+            "APLS-E1301",
+            "vague threshold, degree, or change amount has no computable meaning",
+            "precise_value",
+        );
     }
     for word in ["它", "该设备", "前者", "后者"] {
-        if let Some(span) = word_span(sentence, word) {
-            let mut diagnostic = Diagnostic::source(
-                "APLS-E1302",
-                "reference is not frozen to one declared term",
-                path,
-                source,
-                span,
-            );
-            diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-            diagnostic
-                .missing_or_ambiguous_roles
-                .push("referent".into());
-            diagnostics.push(diagnostic);
-        }
+        word_finding(
+            word,
+            "APLS-E1302",
+            "reference is not frozen to one declared term",
+            "referent",
+        );
     }
     for word in ["应该", "可以", "尽量"] {
-        if let Some(span) = word_span(sentence, word) {
-            let mut diagnostic = Diagnostic::source(
-                "APLS-E1304",
-                "modality must be one of “必须”, “不得”, or “禁止”",
-                path,
-                source,
-                span,
-            );
-            diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-            diagnostic
-                .missing_or_ambiguous_roles
-                .push("modality".into());
-            diagnostics.push(diagnostic);
-        }
+        word_finding(
+            word,
+            "APLS-E1304",
+            "modality must be one of “必须”, “不得”, or “禁止”",
+            "modality",
+        );
     }
     for word in ["或者", "不是", "没有"] {
-        if let Some(span) = word_span(sentence, word) {
-            let mut diagnostic = Diagnostic::source(
-                "APLS-E1306",
-                "unsupported disjunction, nested condition, or general-language negation",
-                path,
-                source,
-                span,
-            );
-            diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-            diagnostic
-                .missing_or_ambiguous_roles
-                .push("condition_scope".into());
-            diagnostics.push(diagnostic);
-        }
+        word_finding(
+            word,
+            "APLS-E1306",
+            "unsupported disjunction, nested condition, or general-language negation",
+            "condition_scope",
+        );
     }
     for word in ["尽快", "及时", "稍后", "随后"] {
-        if let Some(span) = word_span(sentence, word) {
+        word_finding(
+            word,
+            "APLS-E1307",
+            "time reference or deadline is not exact",
+            "exact_time",
+        );
+    }
+
+    if let Some(stall) = coverage.first_stall {
+        let same_span_finding = findings.iter().any(|diagnostic| {
+            diagnostic.primary_source_span.as_ref().is_some_and(|span| {
+                span.start_byte == stall.start_byte && span.end_byte == stall.end_byte
+            })
+        });
+        findings.push(Diagnostic::source(
+            "APLS-E1101",
+            "sentence does not match the APLS 0.1 controlled-natural-language grammar",
+            path,
+            source,
+            stall,
+        ));
+        if !in_quotes(stall) && !same_span_finding {
             let mut diagnostic = Diagnostic::source(
-                "APLS-E1307",
-                "time reference or deadline is not exact",
+                "APLS-E1303",
+                "property owner or action target is missing",
                 path,
                 source,
-                span,
+                stall,
             );
             diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
             diagnostic
                 .missing_or_ambiguous_roles
-                .push("exact_time".into());
-            diagnostics.push(diagnostic);
+                .extend(["action_target".into(), "property_owner".into()]);
+            findings.push(diagnostic);
         }
     }
-
-    let missing_owner = ["温度", "速度"]
-        .into_iter()
-        .filter_map(|word| word_span(sentence, word))
-        .collect::<Vec<_>>();
-    if let Some(span) = missing_owner.first().copied() {
-        let mut diagnostic = Diagnostic::source(
-            "APLS-E1303",
-            "property owner or action target is missing",
-            path,
-            source,
-            span,
-        );
-        diagnostic.normative_rule_reference = "DES-APLS-CNL-DIAG-001".into();
-        diagnostic
-            .missing_or_ambiguous_roles
-            .extend(["action_target".into(), "property_owner".into()]);
-        diagnostics.push(diagnostic);
-    }
-
-    if diagnostics.is_empty() {
-        diagnostics.push(Diagnostic::source(
+    if findings.is_empty() {
+        findings.push(Diagnostic::source(
             "APLS-E1101",
             "sentence does not match the APLS 0.1 controlled-natural-language grammar",
             path,
@@ -3231,29 +3391,263 @@ fn diagnose_unparsed(
             sentence.span,
         ));
     }
-    diagnostics
+    findings
 }
-fn ambiguity(
-    path: &str,
-    source: &str,
-    span: ByteSpan,
-    kind: &str,
-    witnesses: Vec<String>,
-) -> Diagnostic {
-    let mut d = Diagnostic::source(
-        "APLS-E1310",
-        "multiple inequivalent canonical meanings remain",
-        path,
-        source,
-        span,
-    );
-    d.normative_rule_reference = "DEC-017 / DES-APLS-CNL-DIAG-001".into();
-    d.missing_or_ambiguous_roles.push("meaning".into());
-    let ws:Vec<_>=witnesses.into_iter().take(2).map(|w|{let fp=format!("sha256:{}",domain_hash("APLS-CNL-FRAME-WITNESS-0.1",w.as_bytes()));json!({"frame_kind":if kind=="declaration"{"entity_declaration"}else{"rule"},"semantic_fingerprint":fp,"role_fingerprints":[{"role":"meaning","value_fingerprint":format!("sha256:{}",domain_hash_with_kind("APLS-CNL-ROLE-WITNESS-0.1","meaning",w.as_bytes()))}]})}).collect();
-    d.payload = Some(
-        json!({"kind":"ambiguity","outcome":"AMBIGUOUS","differing_roles":["meaning"],"witnesses":ws}),
-    );
-    d
+
+/// 句内全部成对引号区间：`(含引号的外层 Span, 引号内容 Span)`。
+/// 引号配对与跨行禁止已由 Sentence Validator 保证。
+fn quoted_text_spans(sentence: &Sentence<'_>) -> Vec<(ByteSpan, ByteSpan)> {
+    let mut spans = Vec::new();
+    let text = sentence.text;
+    let mut at = 0;
+    while at < text.len() {
+        let ch = text[at..].chars().next().expect("character boundary");
+        let close = match ch {
+            '“' => '”',
+            '『' => '』',
+            _ => {
+                at += ch.len_utf8();
+                continue;
+            }
+        };
+        let content_start = at + ch.len_utf8();
+        let Some(relative) = text[content_start..].find(close) else {
+            break;
+        };
+        let content_end = content_start + relative;
+        let outer_end = content_end + close.len_utf8();
+        spans.push((
+            ByteSpan::new(
+                sentence.span.start_byte + at,
+                sentence.span.start_byte + outer_end,
+            ),
+            ByteSpan::new(
+                sentence.span.start_byte + content_start,
+                sentence.span.start_byte + content_end,
+            ),
+        ));
+        at = outer_end;
+    }
+    spans
+}
+/// 声明候选的规范语义见证：载荷字段集与 `build_graph` 产出的 Graph 声明值一致
+/// （含派生 `id`，不含 Provenance/Span）；引用角色取声明名层面的确定值。
+/// 等价类分组键为该载荷的 Canonical Bytes，与行为句路径的收敛 Gate 语义对齐。
+struct DeclarationWitness {
+    frame_kind: &'static str,
+    payload: Value,
+    roles: BTreeMap<&'static str, (Value, Vec<ByteSpan>)>,
+}
+
+impl DeclarationWitness {
+    fn new(declaration: &Declaration) -> Self {
+        let mut roles = BTreeMap::<&'static str, (Value, Vec<ByteSpan>)>::new();
+        match declaration {
+            Declaration::Entity { name, kind } => {
+                roles.insert("display_name", (json!(name.value), vec![name.span]));
+                roles.insert("entity_kind", (json!(kind.value.as_str()), vec![kind.span]));
+                Self {
+                    frame_kind: "entity_declaration",
+                    payload: json!({"id":format!("entity:{}",name.value),"display_name":name.value,"entity_kind":kind.value.as_str()}),
+                    roles,
+                }
+            }
+            Declaration::Unit { name } => {
+                roles.insert("display_name", (json!(name.value), vec![name.span]));
+                Self {
+                    frame_kind: "unit_declaration",
+                    payload: nominal_unit(&name.value),
+                    roles,
+                }
+            }
+            Declaration::Property {
+                name,
+                value_type,
+                access,
+                unit,
+            } => {
+                let (observable, writable) = access.value.flags();
+                let unit_ref = declaration_unit_ref(value_type.value, unit);
+                roles.insert("display_name", (json!(name.value), vec![name.span]));
+                roles.insert(
+                    "value_type",
+                    (json!(value_type.value.as_str()), vec![value_type.span]),
+                );
+                roles.insert("observable", (json!(observable), vec![access.span]));
+                roles.insert("writable", (json!(writable), vec![access.span]));
+                roles.insert(
+                    "unit_ref",
+                    (
+                        unit_ref.clone(),
+                        unit.as_ref().map_or_else(Vec::new, |unit| vec![unit.span]),
+                    ),
+                );
+                Self {
+                    frame_kind: "property_declaration",
+                    payload: json!({"id":format!("property:{}",name.value),"display_name":name.value,"value_type":value_type.value.as_str(),"observable":observable,"writable":writable,"unit_ref":unit_ref}),
+                    roles,
+                }
+            }
+            Declaration::Action { name, target } => {
+                roles.insert("display_name", (json!(name.value), vec![name.span]));
+                roles.insert(
+                    "target_ref",
+                    (json!(format!("entity:{}", target.value)), vec![target.span]),
+                );
+                Self {
+                    frame_kind: "action_declaration",
+                    payload: json!({"id":format!("action:{}:{}",target.value,name.value),"display_name":name.value,"target_ref":format!("entity:{}",target.value)}),
+                    roles,
+                }
+            }
+            Declaration::Event { name } => {
+                roles.insert("display_name", (json!(name.value), vec![name.span]));
+                Self {
+                    frame_kind: "event_declaration",
+                    payload: json!({"id":format!("event:{}",name.value),"display_name":name.value}),
+                    roles,
+                }
+            }
+            Declaration::Alias {
+                alias,
+                kind,
+                target,
+            } => {
+                roles.insert("display_name", (json!(alias.value), vec![alias.span]));
+                roles.insert("target_kind", (json!(kind.value.as_str()), vec![kind.span]));
+                roles.insert(
+                    "target_ref",
+                    (
+                        json!(format!("{}:{}", kind.value.as_str(), target.value)),
+                        vec![target.span],
+                    ),
+                );
+                Self {
+                    frame_kind: "alias_declaration",
+                    payload: json!({"id":format!("alias:{}:{}",kind.value.as_str(),alias.value),"display_name":alias.value,"target_kind":kind.value.as_str(),"target_ref":format!("{}:{}",kind.value.as_str(),target.value)}),
+                    roles,
+                }
+            }
+            Declaration::State {
+                owner,
+                states,
+                initial,
+            } => {
+                let mut state_values: Vec<_> = states
+                    .iter()
+                    .map(|state| {
+                        json!({"id":format!("state:{}:{}",owner.value,state.value),"display_name":state.value})
+                    })
+                    .collect();
+                state_values.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
+                roles.insert(
+                    "owner_ref",
+                    (json!(format!("entity:{}", owner.value)), vec![owner.span]),
+                );
+                roles.insert(
+                    "states",
+                    (
+                        json!(
+                            states
+                                .iter()
+                                .map(|state| state.value.as_str())
+                                .collect::<Vec<_>>()
+                        ),
+                        states.iter().map(|state| state.span).collect(),
+                    ),
+                );
+                roles.insert(
+                    "initial_state_ref",
+                    (
+                        json!(format!("state:{}:{}", owner.value, initial.value)),
+                        vec![initial.span],
+                    ),
+                );
+                Self {
+                    frame_kind: "state_declaration",
+                    payload: json!({"id":format!("state-model:{}",owner.value),"owner_ref":format!("entity:{}",owner.value),"states":state_values,"initial_state_ref":format!("state:{}:{}",owner.value,initial.value)}),
+                    roles,
+                }
+            }
+        }
+    }
+
+    fn ambiguity_with(
+        &self,
+        other: &Self,
+        path: &str,
+        source: &str,
+        sentence: ByteSpan,
+    ) -> Diagnostic {
+        let all_roles: BTreeSet<_> = self
+            .roles
+            .keys()
+            .chain(other.roles.keys())
+            .copied()
+            .collect();
+        let differing: Vec<_> = all_roles
+            .into_iter()
+            .filter(|role| {
+                self.roles.get(role).map(|(value, _)| value)
+                    != other.roles.get(role).map(|(value, _)| value)
+            })
+            .collect();
+        let differing_set: BTreeSet<_> = differing.iter().copied().collect();
+        let mut differing_spans = [self, other]
+            .into_iter()
+            .flat_map(|witness| witness.roles.iter())
+            .filter(|(role, _)| differing_set.contains(**role))
+            .flat_map(|(_, (_, spans))| spans.iter().copied());
+        let primary_span = differing_spans
+            .next()
+            .map(|first| differing_spans.fold(first, ByteSpan::cover))
+            .unwrap_or(sentence);
+        let mut diagnostic = Diagnostic::source(
+            "APLS-E1310",
+            "multiple inequivalent canonical meanings remain",
+            path,
+            source,
+            primary_span,
+        );
+        diagnostic.normative_rule_reference = "DEC-017 / DES-APLS-CNL-DIAG-001".into();
+        diagnostic.missing_or_ambiguous_roles =
+            differing.iter().map(|role| (*role).into()).collect();
+        let witnesses: Vec<_> = [self, other]
+            .into_iter()
+            .map(|witness| {
+                let role_fingerprints: Vec<_> = differing
+                    .iter()
+                    .map(|role| {
+                        let bytes = witness
+                            .roles
+                            .get(role)
+                            .map_or_else(|| b"null".to_vec(), |(value, _)| canonical_bytes(value));
+                        json!({"role":role,"value_fingerprint":format!("sha256:{}",domain_hash_with_kind("APLS-CNL-ROLE-WITNESS-0.1",role,&bytes))})
+                    })
+                    .collect();
+                json!({"frame_kind":witness.frame_kind,"semantic_fingerprint":format!("sha256:{}",domain_hash("APLS-CNL-FRAME-WITNESS-0.1",&canonical_bytes(&witness.payload))),"role_fingerprints":role_fingerprints})
+            })
+            .collect();
+        diagnostic.payload = Some(
+            json!({"kind":"ambiguity","outcome":"AMBIGUOUS","differing_roles":differing,"witnesses":witnesses}),
+        );
+        diagnostic
+    }
+}
+
+/// 声明语义载荷中的规范 `unit_ref`：内建单位按 `property_unit` 的 Canonical 结果
+/// 取值（`秒/分钟` 与 `毫秒` 等价），名义单位取声明名层面的确定 ID；
+/// 合法性校验仍由 `build_graph` 完成。
+fn declaration_unit_ref(value_type: ValueType, unit: &Option<Spanned<String>>) -> Value {
+    let Some(unit) = unit else {
+        return Value::Null;
+    };
+    match (value_type, unit.value.as_str()) {
+        (ValueType::Percentage, "%") => json!("unit:%"),
+        (ValueType::Duration, "毫秒" | "秒" | "分钟") => json!("unit:毫秒"),
+        (ValueType::Decimal, "摄氏度") => json!("unit:摄氏度"),
+        _ => json!(format!("unit:{}", unit.value)),
+    }
 }
 
 fn frame_ambiguity(
@@ -3651,14 +4045,17 @@ mod tests {
         );
         assert_eq!(ir(&valid)["rules"].as_array().unwrap().len(), 9);
 
-        for invalid in [
-            "当有效高于真时，系统必须启动水泵。",
-            "当次数等于3.0时，系统必须启动水泵。",
-            "当模式高于『自动』时，系统必须启动水泵。",
-            "当液位低于20时，系统必须启动水泵。",
-            "当等待时长不高于2时，系统必须启动水泵。",
-            "当水温低于35时，系统必须启动水泵。",
-            "当目标流量高于2.5摄氏度时，系统必须启动水泵。",
+        for (invalid, expected) in [
+            ("当有效高于真时，系统必须启动水泵。", "APLS-E1401"),
+            ("当次数等于3.0时，系统必须启动水泵。", "APLS-E1401"),
+            ("当模式高于『自动』时，系统必须启动水泵。", "APLS-E1401"),
+            ("当液位低于20时，系统必须启动水泵。", "APLS-E1308"),
+            ("当等待时长不高于2时，系统必须启动水泵。", "APLS-E1308"),
+            ("当水温低于35时，系统必须启动水泵。", "APLS-E1308"),
+            (
+                "当目标流量高于2.5摄氏度时，系统必须启动水泵。",
+                "APLS-E1401",
+            ),
         ] {
             match compile(
                 format!("{declarations}{invalid}").as_bytes(),
@@ -3666,7 +4063,7 @@ mod tests {
                 CompileThrough::Check,
             ) {
                 CompileOutcome::Rejected(diagnostics) => {
-                    assert_eq!(diagnostics[0].code, "APLS-E1401", "{invalid}")
+                    assert_eq!(diagnostics[0].code, expected, "{invalid}")
                 }
                 other => panic!("{invalid}: {other:?}"),
             }
@@ -4210,5 +4607,384 @@ mod tests {
                 other => panic!("{text:?}: {other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn unit_percent_in_text_does_not_trigger_builtin_injection() {
+        let informative =
+            "本规范采用 APLS 简体中文语言版本 0.1。\n说明：『unit:% 是内建百分比单位』。";
+        for through in [CompileThrough::Check, CompileThrough::Emit] {
+            match compile(informative.as_bytes(), "main.apls", through) {
+                CompileOutcome::Accepted(_) => {}
+                other => panic!("{other:?}"),
+            }
+        }
+        assert_eq!(ir(informative)["units"].as_array().unwrap().len(), 0);
+
+        let comparison = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“模式”是文本类型的可观测属性。
+“启动”是“水泵”支持的动作。
+当模式等于『unit:% 文本』时，系统必须启动水泵。";
+        for through in [CompileThrough::Check, CompileThrough::Emit] {
+            match compile(comparison.as_bytes(), "main.apls", through) {
+                CompileOutcome::Accepted(_) => {}
+                other => panic!("{other:?}"),
+            }
+        }
+        let value = ir(comparison);
+        assert_eq!(value["units"].as_array().unwrap().len(), 0);
+        assert_eq!(value["rules"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn real_percentage_reference_injects_exactly_unit_percent() {
+        let value = ir(&format!("{PREFIX}当液位低于20%时，系统必须启动水泵。"));
+        let unit_ids: BTreeSet<_> = value["units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|unit| unit["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(unit_ids, BTreeSet::from(["unit:%"]));
+    }
+
+    #[test]
+    fn require_prohibit_direct_conflict_is_rejected() {
+        let source = format!(
+            "{PREFIX}当液位低于20%时，系统必须启动水泵。\n当液位低于20%时，系统禁止启动水泵。"
+        );
+        for through in [CompileThrough::Check, CompileThrough::Emit] {
+            match compile(source.as_bytes(), "main.apls", through) {
+                CompileOutcome::Rejected(diagnostics) => {
+                    let conflicts: Vec<_> = diagnostics
+                        .iter()
+                        .filter(|d| d.code == "APLS-E1405")
+                        .collect();
+                    assert_eq!(conflicts.len(), 1);
+                    let diagnostic = conflicts[0];
+                    assert_eq!(diagnostic.missing_or_ambiguous_roles, ["modality"]);
+                    assert!(diagnostic.payload.is_none());
+                    let primary = diagnostic.primary_source_span.as_ref().unwrap();
+                    assert_eq!(
+                        &source[primary.start_byte..primary.end_byte],
+                        "当液位低于20%时，系统必须启动水泵。"
+                    );
+                    assert_eq!(diagnostic.related_source_spans.len(), 1);
+                    let related = &diagnostic.related_source_spans[0];
+                    assert_eq!(
+                        &source[related.start_byte..related.end_byte],
+                        "当液位低于20%时，系统禁止启动水泵。"
+                    );
+                    crate::diagnostic::envelope_bytes("rejected", &diagnostics)
+                        .expect("conflict envelope must match the public schema");
+                }
+                other => panic!("{other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn non_conflicting_rule_combinations_do_not_report_e1405() {
+        let same_modality = format!(
+            "{PREFIX}当液位低于20%时，系统必须启动水泵。\n当液位低于20%时，系统必须启动水泵。"
+        );
+        assert_eq!(ir(&same_modality)["rules"].as_array().unwrap().len(), 1);
+
+        let different_condition = format!(
+            "{PREFIX}当液位低于20%时，系统必须启动水泵。\n当液位低于30%时，系统禁止启动水泵。"
+        );
+        assert_eq!(
+            ir(&different_condition)["rules"].as_array().unwrap().len(),
+            2
+        );
+
+        let different_behavior = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“排水阀”是设备。
+“液位”是百分比类型的可观测属性。
+“启动”是“水泵”支持的动作。
+“关闭”是“排水阀”支持的动作。
+当液位低于20%时，系统必须启动水泵。
+当液位低于20%时，系统禁止关闭排水阀。";
+        assert_eq!(ir(different_behavior)["rules"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn tool_failure_in_candidate_processing_terminates_the_transaction() {
+        let document = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“液位”是百分比类型的可观测属性。
+“启动”是“水泵”支持的动作。
+“泵”是实体“水泵”的别名。
+“启动水”是动作“启动”的别名。
+当液位低于20%时，系统必须启动水泵。";
+        let (source, sentences) = validate_and_split(document.as_bytes(), "main.apls").unwrap();
+        let mut ledger = Ledger::default();
+        validate_profile(source, &sentences[0], &mut ledger, "main.apls").unwrap();
+        let mut records = Vec::new();
+        let mut declaration_indexes = BTreeSet::new();
+        for sentence in sentences.iter().skip(1) {
+            let mut candidates = BTreeSet::new();
+            for stream in
+                lex_and_enumerate(sentence, 1, &[], &mut ledger, "main.apls", source).unwrap()
+            {
+                if let Ok(parsed) = crate::apls_grammar::DeclarationEntryParser::new()
+                    .parse(stream.into_iter().map(Ok))
+                {
+                    candidates.insert(parsed.value);
+                }
+            }
+            if let Some(declaration) = candidates.into_iter().next() {
+                declaration_indexes.insert(sentence.index);
+                records.push(DeclRecord {
+                    declaration,
+                    span: sentence.span,
+                });
+            }
+        }
+        let graph = build_graph(&records, "main.apls", source).unwrap();
+        let sentence = sentences
+            .iter()
+            .skip(1)
+            .find(|sentence| !declaration_indexes.contains(&sentence.index))
+            .unwrap();
+        let parsed: Vec<_> = lex_and_enumerate(
+            sentence,
+            2,
+            &graph.symbols,
+            &mut ledger,
+            "main.apls",
+            source,
+        )
+        .unwrap()
+        .into_iter()
+        .filter_map(|stream| {
+            crate::apls_grammar::NormativeEntryParser::new()
+                .parse(stream.into_iter().map(Ok))
+                .ok()
+                .map(|candidate| candidate.value)
+        })
+        .collect();
+        assert!(parsed.len() >= 2);
+
+        let mut injected = Ledger::default();
+        injected.set_for_test(Resource::BoundFrames, 999_999);
+        let result =
+            converge_candidates(parsed, sentence, &graph, "main.apls", source, &mut injected);
+        match result {
+            Err(diagnostics) => {
+                assert_eq!(diagnostics.len(), 1);
+                assert_eq!(diagnostics[0].code, "APLS-T0007");
+                let payload = diagnostics[0].payload.as_ref().unwrap();
+                assert_eq!(payload["resource"], "bound_frame_candidates");
+                assert_eq!(payload["stage"], "bind");
+            }
+            Ok(_) => panic!("the sibling candidate must not mask the tool failure"),
+        }
+    }
+
+    #[test]
+    fn zero_candidate_aggregation_reports_catalog_sample_root_causes_order_independently() {
+        let source = "本规范采用 APLS 简体中文语言版本 0.1。\n温度高的时候适当降低一点速度。";
+        let compile_once = || match compile(source.as_bytes(), "main.apls", CompileThrough::Check) {
+            CompileOutcome::Rejected(diagnostics) => diagnostics,
+            other => panic!("{other:?}"),
+        };
+        let first = compile_once();
+        let codes: BTreeSet<_> = first.iter().map(|d| d.code.as_str()).collect();
+        assert!(codes.contains("APLS-E1301"));
+        assert!(codes.contains("APLS-E1303"));
+        assert!(!codes.contains("APLS-E1101"));
+        let second = compile_once();
+        assert_eq!(
+            crate::diagnostic::envelope_bytes("rejected", &first).unwrap(),
+            crate::diagnostic::envelope_bytes("rejected", &second).unwrap()
+        );
+    }
+
+    #[test]
+    fn vague_word_inside_declared_term_is_not_reported() {
+        let source = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“最高水位”是小数类型的可观测属性。
+“启动”是“水泵”支持的动作。
+最高水位异常时，系统必须启动水泵。";
+        match compile(source.as_bytes(), "main.apls", CompileThrough::Check) {
+            CompileOutcome::Rejected(diagnostics) => {
+                assert!(!diagnostics.iter().any(|d| d.code == "APLS-E1301"));
+                assert!(!diagnostics.iter().any(|d| d.code == "APLS-E1101"));
+                assert!(diagnostics.iter().any(|d| d.code == "APLS-E1303"));
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn closed_suppression_table_is_exact() {
+        let source = "当“甲”等于真时。";
+        let span = ByteSpan::new(3, 6);
+        let aggregated = aggregate_terminal_findings(vec![
+            Diagnostic::source("APLS-E1204", "specific", "main.apls", source, span),
+            Diagnostic::source("APLS-E1101", "generic", "main.apls", source, span),
+        ]);
+        let codes: BTreeSet<_> = aggregated.iter().map(|d| d.code.as_str()).collect();
+        assert_eq!(codes, BTreeSet::from(["APLS-E1204"]));
+
+        let aggregated = aggregate_terminal_findings(vec![
+            Diagnostic::source("APLS-E1401", "specific", "main.apls", source, span),
+            Diagnostic::source("APLS-E1308", "derived", "main.apls", source, span),
+        ]);
+        let codes: BTreeSet<_> = aggregated.iter().map(|d| d.code.as_str()).collect();
+        assert_eq!(codes, BTreeSet::from(["APLS-E1401"]));
+
+        let aggregated = aggregate_terminal_findings(vec![
+            Diagnostic::source("APLS-E1201", "specific", "main.apls", source, span),
+            Diagnostic::source("APLS-E1308", "derived", "main.apls", source, span),
+            Diagnostic::source(
+                "APLS-E1101",
+                "generic",
+                "main.apls",
+                source,
+                ByteSpan::new(9, 12),
+            ),
+        ]);
+        let codes: BTreeSet<_> = aggregated.iter().map(|d| d.code.as_str()).collect();
+        assert_eq!(
+            codes,
+            BTreeSet::from(["APLS-E1201", "APLS-E1308", "APLS-E1101"])
+        );
+    }
+
+    #[test]
+    fn bare_number_against_unit_property_is_e1308() {
+        let source = format!("{PREFIX}当液位低于20时，系统必须启动水泵。");
+        match compile(source.as_bytes(), "main.apls", CompileThrough::Check) {
+            CompileOutcome::Rejected(diagnostics) => {
+                assert_eq!(diagnostics.len(), 1);
+                assert_eq!(diagnostics[0].code, "APLS-E1308");
+                let primary = diagnostics[0].primary_source_span.as_ref().unwrap();
+                assert_eq!(&source[primary.start_byte..primary.end_byte], "20");
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn coordination_outside_condition_is_e1305() {
+        let source = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“液位”是百分比类型的可观测属性。
+“启动”是“水泵”支持的动作。
+“停止”是“水泵”支持的动作。
+当液位低于20%时，系统必须启动水泵并且系统必须停止水泵。";
+        match compile(source.as_bytes(), "main.apls", CompileThrough::Check) {
+            CompileOutcome::Rejected(diagnostics) => {
+                let diagnostic = diagnostics
+                    .iter()
+                    .find(|d| d.code == "APLS-E1305")
+                    .expect("coordination scope root cause");
+                let primary = diagnostic.primary_source_span.as_ref().unwrap();
+                assert_eq!(&source[primary.start_byte..primary.end_byte], "并且");
+                assert!(!diagnostics.iter().any(|d| d.code == "APLS-E1101"));
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn transition_with_identical_source_and_target_state_is_e1404() {
+        let source = "本规范采用 APLS 简体中文语言版本 0.1。
+“水泵”是执行器。
+“启动命令”是事件。
+“水泵”的状态包括“待机”和“运行”，初始状态是“待机”。
+当系统收到启动命令时，水泵从待机状态进入待机状态。";
+        match compile(source.as_bytes(), "main.apls", CompileThrough::Check) {
+            CompileOutcome::Rejected(diagnostics) => {
+                assert_eq!(diagnostics.len(), 1);
+                assert_eq!(diagnostics[0].code, "APLS-E1404");
+                let primary = diagnostics[0].primary_source_span.as_ref().unwrap();
+                assert_eq!(
+                    &source[primary.start_byte..primary.end_byte],
+                    "待机状态进入待机"
+                );
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn declaration_ambiguity_uses_frozen_witness_contract() {
+        let source = "“液位”是百分比类型的可观测属性。";
+        let sentence = ByteSpan::new(0, source.len());
+        let percentage = Declaration::Property {
+            name: spanned(3, "液位".to_owned(), 9),
+            value_type: spanned(15, ValueType::Percentage, 24),
+            access: spanned(33, PropertyAccess::Observable, 42),
+            unit: None,
+        };
+        let decimal = Declaration::Property {
+            name: spanned(3, "液位".to_owned(), 9),
+            value_type: spanned(15, ValueType::Decimal, 24),
+            access: spanned(33, PropertyAccess::Observable, 42),
+            unit: None,
+        };
+        let left = DeclarationWitness::new(&percentage);
+        let right = DeclarationWitness::new(&decimal);
+        assert_ne!(
+            canonical_bytes(&left.payload),
+            canonical_bytes(&right.payload)
+        );
+
+        let diagnostic = left.ambiguity_with(&right, "main.apls", source, sentence);
+        assert_eq!(diagnostic.code, "APLS-E1310");
+        assert_eq!(diagnostic.missing_or_ambiguous_roles, ["value_type"]);
+        let primary = diagnostic.primary_source_span.as_ref().unwrap();
+        assert_eq!((primary.start_byte, primary.end_byte), (15, 24));
+        let payload = diagnostic.payload.as_ref().unwrap();
+        assert_eq!(payload["differing_roles"], json!(["value_type"]));
+        let witnesses = payload["witnesses"].as_array().unwrap();
+        assert_eq!(witnesses.len(), 2);
+        assert_eq!(witnesses[0]["frame_kind"], "property_declaration");
+        let expected_fingerprint = format!(
+            "sha256:{}",
+            domain_hash(
+                "APLS-CNL-FRAME-WITNESS-0.1",
+                &canonical_bytes(&left.payload)
+            )
+        );
+        assert_eq!(witnesses[0]["semantic_fingerprint"], expected_fingerprint);
+        let expected_role = format!(
+            "sha256:{}",
+            domain_hash_with_kind(
+                "APLS-CNL-ROLE-WITNESS-0.1",
+                "value_type",
+                &canonical_bytes(&json!("percentage"))
+            )
+        );
+        assert_eq!(
+            witnesses[0]["role_fingerprints"][0],
+            json!({"role": "value_type", "value_fingerprint": expected_role})
+        );
+        crate::diagnostic::envelope_bytes("rejected", &vec![diagnostic])
+            .expect("declaration ambiguity envelope must match the public schema");
+
+        // 语义等价的声明候选（duration 的 秒/毫秒 规范 unit_ref 相同）合并为一个等价类
+        let seconds = Declaration::Property {
+            name: spanned(3, "等待".to_owned(), 9),
+            value_type: spanned(15, ValueType::Duration, 21),
+            access: spanned(33, PropertyAccess::Observable, 42),
+            unit: Some(spanned(45, "秒".to_owned(), 48)),
+        };
+        let millis = Declaration::Property {
+            name: spanned(3, "等待".to_owned(), 9),
+            value_type: spanned(15, ValueType::Duration, 21),
+            access: spanned(33, PropertyAccess::Observable, 42),
+            unit: Some(spanned(45, "毫秒".to_owned(), 51)),
+        };
+        assert_eq!(
+            canonical_bytes(&DeclarationWitness::new(&seconds).payload),
+            canonical_bytes(&DeclarationWitness::new(&millis).payload)
+        );
     }
 }

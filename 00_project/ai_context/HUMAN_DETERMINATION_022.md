@@ -2,10 +2,11 @@
 
 ```yaml
 determination_id: HDP-APLS-022
-status: AWAITING_HUMAN_DETERMINATION
-selected_option: NONE
+status: APPROVED
+selected_option: A
 decision_owner: HUMAN_PROJECT_OWNER
 prepared_date: 2026-09-04
+approved_date: 2026-09-05
 ```
 
 ## 1. 必须决定什么

@@ -1,12 +1,12 @@
 # APLS 0.1 CNL 语义验证与规范化 Profile
 
 - 设计 ID：`DES-APLS-CNL-SEMVAL-001`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-004`、`DEC-014`～`DEC-021`、`DES-APLS-ZH-CNL-001`、`DES-APLS-CNL-FRAME-001`、`DES-APLS-CNL-IR-001`
 - 关闭 Finding：`BF-04`、`BF-05`、`BF-08`、`BF-09`
 
-> 本 Profile 是 `TASK-019` 形成的公共语义候选。它尚未被采用；只有 `HDP-APLS-018` 明确批准后，才能成为 `TASK-018` 的实现输入。
+> 本 Profile 是 `TASK-019` 形成的公共语义契约，已由 `DEC-023`（`HDP-APLS-018 Option A`）采用为 `TASK-018` 实现输入；尚未建立 Baseline。
 
 ## 1. 验证顺序与失败关闭
 
@@ -20,6 +20,7 @@
   -> Acceptance Deadline 正值
   -> Condition 规范化
   -> Transition 文档级检查
+  -> Rule 文档级冲突检查
 ```
 
 候选违反任一规则时被确定性淘汰。单个候选的失败不自动成为公共 Error；最终 `0/1/>1` 类别判定与零候选诊断聚合按 CNL 诊断契约执行。实现不得使用隐式类型转换、常识单位换算、主机浮点数、Locale 或 LLM 补齐本 Profile 未列出的关系。
@@ -137,6 +138,21 @@ trigger 成立
 - 0.1 不使用优先级、Source 顺序或运行时先到事件解决冲突。
 
 任何扩大到一般条件重叠、互斥证明或优先级的规则都必须升级 Language/Semantic Profile，不得由实现私自加入。
+
+### 6.4 Rule 直接冲突（REQUIRE×PROHIBIT）
+
+将每个 Rule 放入以下冲突键：
+
+```text
+(canonical_condition_payload_bytes, behavior.actor_ref, behavior.action_ref, behavior.target_ref)
+```
+
+- 同一键只出现一种模态：不冲突；完全相同的 Rule 按匿名节点规则合并并取 Provenance 并集；
+- 同一键同时出现 `require`（`必须`）与 `prohibit`（`禁止`/`不得`）：构成直接冲突，产生一条 `APLS-E1405`，编译拒绝；
+- Primary Span 是冲突组中按 `(source_id, sentence_span.start_byte, sentence_span.end_byte)` 稳定排序的第一条 Rule Sentence Span，其余冲突句为 Related Span；`missing_or_ambiguous_roles=["modality"]`；
+- Invariant 与 Rule 的冲突、Safety（`安全要求：`）与普通 Rule 的优先级、不同 Canonical Condition 之间的一般重叠或互斥证明，在 0.1 中均不定义；0.1 不使用优先级、Source 顺序或运行时先到事件解决冲突。
+
+任何扩大到上述未定义冲突语义的规则都必须升级 Language/Semantic Profile，不得由实现私自加入。
 
 ## 7. Unit Materialization Closure
 

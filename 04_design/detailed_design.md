@@ -1,6 +1,6 @@
 # 详细设计总览
 
-> 当前状态：`TASK019_THIRD_REMEDIATION_CANDIDATE_AWAITING_THIRD_REREVIEW`。第二次再复审已关闭 BF-02/03/04/05/07/08/09 与 NF-01/02/04；NF-05 已形成不改变资源数值的证据分层候选，等待独立确认。原 CNL 实现包继续阻塞。旧 DSL 不再定义当前公开语言。
+> 当前状态：`TASK-019` 已由 `DEC-023`（`HDP-APLS-018 Option A`）采用并完成；`TASK-018` CNL 垂直切片已实施（整改按 `DEC-024` 完成），通过 `TASK-020` C05 验证（`DEC-025`），候选冻结为 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e`（`DEC-026`）。首次正式 C04 结论 `CHANGES_REQUESTED`，整改按 `WP-APLS-C04-REMEDIATION-001` / `DEC-031` 执行中。旧 DSL 不再定义当前公开语言。
 
 ## 模块列表
 
@@ -32,7 +32,7 @@
 - `compiler/APLS_0.1_IMPLEMENTATION_FOUNDATION_DESIGN.md`（已批准设计输入，未建立产品 Baseline）
 - `compiler/APLS_0.1_CNL_RESOURCE_AND_ORDERING_PROFILE.md`（TASK-019 资源与稳定顺序候选）
 - `compiler/APLS_0.1_CNL_UNICODE_NFC_PROFILE.md`（TASK-019 Unicode/NFC 与依赖候选）
-- `compiler/APLS_0.1_CNL_IMPLEMENTATION_WORK_PACKAGE.md`（原工作包已批准，当前 BLOCKED）
+- `compiler/APLS_0.1_CNL_IMPLEMENTATION_WORK_PACKAGE.md`（工作包已批准，`TASK-018` 已按其实施）
 - `../06_test_design/APLS_0.1_CNL_PREIMPLEMENTATION_CONFORMANCE.md`（16 个实施前最小一致性 Case）
 
 旧 Language Design、EBNF、Lexical Profile 及现有 Compiler Frontend 只作 `DEC-014` 前迁移参考，不是当前 CNL 公共接口。
@@ -65,7 +65,7 @@
 
 ## 配置
 
-- Compiler 实现已选择 Rust 2024 + LALRPOP 默认 LR(1)；原工具链与依赖闭包已批准。语义哈希已由 `DEC-019` 冻结为版本化 SHA-256；完整 NFC 需要的新增依赖候选仍待 `HDP-APLS-018`。参考后端仍未冻结。
+- Compiler 实现已选择 Rust 2024 + LALRPOP 默认 LR(1)；原工具链与依赖闭包已批准。语义哈希已由 `DEC-019` 冻结为版本化 SHA-256；完整 NFC 所需新增依赖已由 `DEC-023` 批准、实际 Feature 闭包由 `DEC-024` 接受。参考后端仍未冻结。
 
 ## 测试点
 

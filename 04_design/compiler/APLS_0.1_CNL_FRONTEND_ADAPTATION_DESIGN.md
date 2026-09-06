@@ -1,12 +1,12 @@
 # APLS 0.1 CNL Frontend 技术适配设计
 
 - 设计 ID：`DES-APLS-CNL-FRONTEND-001`
-- 状态：`TASK019_REMEDIATION_CANDIDATE_AWAITING_HDP_APLS_018`
+- 状态：`ADOPTED_AS_IMPLEMENTATION_INPUT_BY_DEC-023`
 - 日期：`2026-09-03`
 - 输入：`DEC-010`、`DEC-011`、`DEC-014`～`DEC-018`、`DEC-021`、`TASK-015`、`DES-APLS-CNL-SEMVAL-001`、`DES-APLS-CNL-RESOURCE-001`、`DES-APLS-CNL-UNICODE-001`
 - 适用范围：`apls-zh-CN-0.1` 从 Source 到唯一 Canonical Frame 等价类
 
-> 本文只形成实现路线候选，不修改 Compiler Source、依赖或 Baseline。
+> 本文形成 CNL Frontend 实现路线，已由 `DEC-023`（`HDP-APLS-018 Option A`）采用为 `TASK-018` 实现输入；不建立 Baseline。
 
 ## 1. 结论
 
