@@ -25,7 +25,7 @@
 | TASK-021 | IMMUTABLE_CANDIDATE_COMMIT | C00 | TASK-018/TASK-020 DONE、DEC-026 | 一个本地初始 Commit、精确 Commit Hash、staged set 和禁止对象核验 | DONE |
 | TASK-022 | INITIAL_FORMAL_C04 | C04 | 精确 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e`、C05 PASS、HDP-APLS-022（APPROVED Option A / DEC-028）、DEC-029 | 首次正式 C04 Review Record 与 Gate Decision | DONE |
 | TASK-023 | PRIVATE_GITHUB_SYNC_AND_KIMI_HANDOFF | C00 | 用户明确授权、Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` | GitHub 私有仓库、同步 `main`、Kimi C00 HANDOFF 与启动指令 | DONE |
-| TASK-024 | FORMAL_C04_FINDING_REMEDIATION | C02/C03 | `FORMAL_C04_APLS_0_1_CANDIDATE_001`（CHANGES_REQUESTED，F-01～F-09）、DEC-030 | 整改工作包、HDP-APLS-024、精确整改、新 Review Target 与 Finding 关闭复审 | IN_PROGRESS |
+| TASK-024 | FORMAL_C04_FINDING_REMEDIATION | C02/C03 | `FORMAL_C04_APLS_0_1_CANDIDATE_001`（CHANGES_REQUESTED，F-01～F-09）、DEC-030、DEC-031、DEC-032、DEC-033 | 整改工作包、HDP-APLS-024、精确整改、新 Review Target 与 Finding 关闭复审 | DONE |
 
 允许状态：`TODO → READY → IN_PROGRESS → OUTPUT_READY → READY_FOR_REVIEW → DONE`，以及受控的 `BLOCKED / CANCELLED` 分支。
 
@@ -249,4 +249,6 @@
 
 > TASK-021 已完成：本地初始 Commit `3289037bee1aab64dfa2d58188379a68dcfa601e`、Tree `51edf42da73237bcb3408e234d2cbb2095758fa1`，共 249 个文件；`07_src/target/` 未进入 Commit。该 Anchor 尚未经过正式 C04，也未采用为产品 Baseline。
 
-> TASK-022 已完成：`FORMAL_C04_APLS_0_1_CANDIDATE_001 = CHANGES_REQUESTED`（READY，Open Findings 9：S1 F-01/F-02，S2 F-03/F-04/F-05/F-06/F-08，S3 F-07/F-09；证据受限 E-01～E-03）。首次 Dispatch `NISR-APLS-C04-022-001` 中断后由 `DEC-029` 授权的手动干净会话（APLS-C04-Independent-Review-v02）完成评审；Target 三时点身份核验一致。TASK-024 按 Finding 关闭流程阻塞等待整改授权：S1 经 Expert Escalation，整改工作包与 HDP-APLS-024 批准前不得修改 Compiler/CLI Source、测试、设计、Schema、Manifest 或 Lock。
+> TASK-024 已完成：`HDP-APLS-024`（DEC-031，Q1=A/Q2=B/Q3=A/Q4=A/Q4-a=NO）批准 `WP-APLS-C04-REMEDIATION-001`；批次 1（C03-v02：F-01/F-02/F-03/F-04/F-05/F-07+A-01 代码与契约）与批次 2（C01-v02：F-08 追溯层 27 ID/30 FORMAL_TRACE 边、F-06 PRD-007 措辞、F-09 文档货币性）先后完成；DEC-033 接受 §8 扩展修正、授权 EBNF 状态注释修正并建立新 Anchor `fd8b59536fcdfdff2f3b199b882c15d97edb1993`；关闭复审 `FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS`，F-01～F-09 全部 CLOSED，Open Finding = 0，无越权改动。
+
+> TASK-022 已完成：`FORMAL_C04_APLS_0_1_CANDIDATE_001 = CHANGES_REQUESTED`（READY，Open Findings 9：S1 F-01/F-02，S2 F-03/F-04/F-05/F-06/F-08，S3 F-07/F-09；证据受限 E-01～E-03）。首次 Dispatch `NISR-APLS-C04-022-001` 中断后由 `DEC-029` 授权的手动干净会话（APLS-C04-Independent-Review-v02）完成评审；Target 三时点身份核验一致。

@@ -11,6 +11,7 @@
 | C03 | Implementation | v02 | COMPLETED | TASK-024 批次 1 完成（36+7 测试全过，MSRV 通过），会话冻结 | `07_src/` + 工作包批次 1 列明的契约文档 |
 | C04 | Independent Review | v01 | INTERRUPTED | TASK-022：`NISR-APLS-C04-022-001` 已启动并完成 Target 物化，但在写入 Review Record 前被平台中止；无 Gate Decision，重新 Dispatch 需新授权 | 只读 Target + 仅 `05_reviews/FORMAL_C04_APLS_0_1_CANDIDATE_001.md` |
 | C04 | Independent Review | v02 | COMPLETED | TASK-022 已完成：`FORMAL_C04_APLS_0_1_CANDIDATE_001 = CHANGES_REQUESTED`（9 Open Findings）；本会话评审结束后冻结 | 只读 Target + 仅 `05_reviews/FORMAL_C04_APLS_0_1_CANDIDATE_001.md` |
+| C04 | Independent Review | v03 | COMPLETED | TASK-024 关闭复审完成：`FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS`（Open Finding 0）；会话冻结 | 只读 Target + 仅 `05_reviews/FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001.md` |
 | C05 | Verification/Release | v01 | READY | TASK-020 已完成；等待后续 Gate | `06_test_design/`、`09_quality/`、`11_validation/`、`14_release/` |
 | C06 | Issues/Change | v01 | READY | 后续问题与变更闭环 | 待建立 |
 

@@ -5,21 +5,21 @@
 ## 1. 当前快照
 
 - 项目：APLS（Agent Programming Language Specification）
-- 当前产品版本：`0.1.0-draft`
-- 当前开发阶段：`BASELINE_PREPARATION`
-- 当前里程碑：`M35 — TASK-024 批次 1/2 整改完成，追溯门禁 PASS，待新 Anchor 与关闭复审授权`
+- 当前产品版本：`0.1.0`
+- 当前开发阶段：`BASELINE_ESTABLISHED`
+- 当前里程碑：`M38 — APLS-0.1-BASELINE-001 成立（HDP-APLS-025 / DEC-034），治理回执提交与私有远程同步执行中`
 - 最后更新时间：`2026-09-06`
-- 当前项目状态：`REMEDIATION_COMPLETE_ANCHOR_PENDING`
+- 当前项目状态：`BASELINE_ADOPTED_SYNC_IN_PROGRESS`
 - 当前 Baseline：见 `BASELINE_INDEX.md`
 - 当前有效决定：见 `DECISION_INDEX.md`
 
 ## 2. 当前执行状态
 
-- 当前 Gate：`REMEDIATION_COMPLETE — NEW_ANCHOR_AND_REREVIEW_AUTHORIZATION_PENDING`
-- 当前执行焦点：两批整改完成且复核通过；等待项目负责人裁决三件事——① C01 对 `system_architecture.md` §8 的扩展修正是否接受；② `APLS_0.1_ZH_CN_GRAMMAR.ebnf` 第 3 行过期状态注释修正授权；③ 新精确 Git Anchor 的 Commit 授权（之后才能发起 Finding 关闭复审）
+- 当前 Gate：`BASELINE_ADOPTED（APLS-0.1-BASELINE-001）— GOVERNANCE_RECEIPT_COMMIT_AND_PUSH`
+- 当前执行焦点：按 DEC-034 Q2=A 提交 Anchor 后治理回执并 Push `main` 到私有远程
 - 当前责任角色：`C00`
 - 持续逻辑控制通道：`C00`
-- 当前任务：`TASK-022 = DONE（CHANGES_REQUESTED）`；`TASK-024 = IN_PROGRESS`（整改实施完成，待 Anchor 与关闭复审）
+- 当前任务：`TASK-024 = DONE（复审 PASS）`；当前无活动执行任务
 
 ## 3. 当前授权边界与运行路由
 
@@ -41,7 +41,10 @@ CURRENT_AUTHORIZATION: AUTH-APLS-C04-022-REDISPATCH-MANUAL EXECUTION_COMPLETED�
 CURRENT_AUTHORIZATION: AUTH-APLS-C00-030-REMEDIATION-ORGANIZATION EXECUTION_COMPLETED（DEC-030；C02-v02 已交付工作包与 HDP-APLS-024）
 CURRENT_AUTHORIZATION: AUTH-APLS-C00-032-TOOLCHAIN-INSTALL EXECUTION_COMPLETED（DEC-032；rustup + Rust 1.98.0/1.86.0 已安装，cargo fetch/test --locked 基线核验通过）
 CURRENT_AUTHORIZATION: AUTH-APLS-C03-024-BATCH1-IMPLEMENTATION EXECUTION_COMPLETED（HDP-APLS-024 / DEC-031；批次 1 完成：Compiler 36 PASS/1 ignored、CLI 7 PASS/1 ignored、MSRV 1.86 check 通过、fmt 通过，C00 复核一致）
-CURRENT_AUTHORIZATION: AUTH-APLS-C01-024-BATCH2-IMPLEMENTATION EXECUTION_COMPLETED（HDP-APLS-024 / DEC-031；批次 2 完成：27 个新需求 ID、30 条 FORMAL_TRACE 边，validate_traceability.py PASS，C00 复核一致；遗留：§8 扩展修正待裁决、EBNF 第 3 行状态注释待授权）
+CURRENT_AUTHORIZATION: AUTH-APLS-C01-024-BATCH2-IMPLEMENTATION EXECUTION_COMPLETED（HDP-APLS-024 / DEC-031；批次 2 完成：27 个新需求 ID、30 条 FORMAL_TRACE 边，validate_traceability.py PASS，C00 复核一致；§8 扩展修正与 EBNF 注释修正已由 DEC-033 接受/授权）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-033-ANCHOR EXECUTION_COMPLETED（DEC-033；新精确 Anchor Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993`，Tree `c672fe950c4ef9a75af0fe4430254982a5ab175b`，256 文件；未 Push）
+CURRENT_AUTHORIZATION: AUTH-APLS-C04-033-REREVIEW-DISPATCH EXECUTION_COMPLETED（DEC-033；APLS-C04-Independent-Review-v03 复审完成：FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS，Open Finding = 0，Target 三时点核验一致）
+CURRENT_AUTHORIZATION: AUTH-APLS-C00-034-RECEIPT-COMMIT-PUSH ISSUED_UNUSED（DEC-034 Q2=A；仅提交 Anchor 后治理回执为一个新 Commit 并 Push main 到私有远程 loocoo2025/apls-language）
 
 PRIMARY_EXECUTOR:
 MODEL: KIMI_K3
@@ -102,15 +105,16 @@ HUMAN_PROJECT_OWNER: PROJECT_OWNER_USER
 - 完整性：排除构建输出后的 74 个受保护设计/源码/测试文件前后摘要均为 `c52271e9e5f25eed993ab00d8af17d27fd3f6258ed151f5a35b1552aa29fb1f8`；Cargo/Lock 未变化。
 - Commit 结果：`3289037bee1aab64dfa2d58188379a68dcfa601e`，Tree `51edf42da73237bcb3408e234d2cbb2095758fa1`，249 文件，Git 对象核验通过。
 - 私有远程：`https://github.com/loocoo2025/apls-language` 已创建并确认 `Private`；首次同步 `origin/main = fa3e09f35eb1d7b5418cf73edba80a57aa5aa769`。
-- Residual Risk：`FORMAL_C04_CHANGES_REQUESTED_NO_PRODUCT_BASELINE`
+- Residual Risk：`NONE_FORMAL_C04_PASS_AWAITING_BASELINE_ADOPTION`
 - 首次正式 C04：`FORMAL_C04_APLS_0_1_CANDIDATE_001 = CHANGES_REQUESTED`（Target `3289037...` 三时点身份核验一致、评审期间未改动）；Open Findings 9（S1：F-01/F-02；S2：F-03/F-04/F-05/F-06/F-08；S3：F-07/F-09），Advisory 4，证据受限 E-01～E-03（本机无 Rust 工具链，测试未独立重跑）
+- Finding 关闭复审：`FORMAL_C04_APLS_0_1_REMEDIATION_REREVIEW_001 = PASS`（Target `fd8b59536fcdfdff2f3b199b882c15d97edb1993`，Tree `c672fe950c4ef9a75af0fe4430254982a5ab175b`，256 文件）；F-01～F-09 全部 CLOSED，无越权改动，Compiler 36/CLI 7 测试与 MSRV 1.86、追溯门禁全部通过；仅两条 ignored 用例按 INHERITED_CLOSED 继承
 - 已知实现偏差：`NONE_OPEN_IN_IMPLEMENTATION_REREVIEWS`
 
 ## 5. 当前下一步
 
-1. 项目负责人裁决：① `system_architecture.md` §8 扩展修正（接受/回退）；② `APLS_0.1_ZH_CN_GRAMMAR.ebnf` 第 3 行过期状态注释的修正授权；③ 参照 DEC-026 模式授权创建一个包含全部整改与治理落盘的新精确 Git Anchor；
-2. Anchor 建立后，C00 发起全新独立 C04 Session 按 `DELTA_ONLY` + 九条关闭条件必查项复审 Finding 关闭；
-3. 只有复审 PASS 且 Open Finding 为 0 后，才另行裁决产品 Baseline Adoption。
+1. C00 完成治理回执提交与私有远程 Push（DEC-034 Q2=A，本步执行后即收口）；
+2. 此后项目进入 Baseline 后增量治理：普通改动按 `DELTA_ONLY` 复审链执行；
+3. Release 与 Formal Seal 仍须另行明确裁决，未授权。
 
 ## 6. 上下文健康
 

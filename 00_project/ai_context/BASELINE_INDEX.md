@@ -4,13 +4,14 @@
 
 ## 当前项目 Baseline
 
-- Baseline ID：`APLS-BASELINE-NOT-ESTABLISHED`
-- Baseline Status：`DRAFT`
-- 产品版本：`0.1.0-draft`
-- Project Git Anchor：`3289037bee1aab64dfa2d58188379a68dcfa601e`（C05 PASS 候选 Anchor，尚未正式 C04/Baseline Adoption）
-- 建立日期：`2026-09-02`
+- Baseline ID：`APLS-0.1-BASELINE-001`
+- Baseline Status：`CURRENT`
+- 产品版本：`0.1.0`
+- Project Git Anchor：`fd8b59536fcdfdff2f3b199b882c15d97edb1993`（Tree `c672fe950c4ef9a75af0fe4430254982a5ab175b`，256 文件；承接 C05 PASS 候选 `3289037...` + 首次正式 C04 的 F-01～F-09 整改，关闭复审 PASS / Open Finding 0）
+- 建立日期：`2026-09-06`
+- 采用依据：`HDP-APLS-025 APPROVED（Q1=A）/ DEC-034`
 
-当前没有可声明为 `CURRENT` 的 APLS 产品 Baseline。需求、语言规范、Canonical IR、编译器实现和测试均处于未建立或候选状态。
+APLS 0.1 产品 Baseline 已成立。需求、语言规范、Canonical IR、编译器实现、测试与追溯层均为 CURRENT。Release 与 Formal Seal 未发生。
 
 ## 治理采用源
 
@@ -25,28 +26,27 @@
 
 治理框架采用不等于 APLS 产品 Baseline 已采用。
 
-## 当前候选组成
+## 当前 Baseline 组成
 
 | 对象 | 状态 | 权威文件 |
 |---|---|---|
-| 产品需求 | DEC_014_CHANGE_INTEGRATED_NOT_BASELINED | `01_product_requirements/PRD.md` |
-| 系统需求 | NOT_ESTABLISHED | 未建立 |
-| 语言规范 | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/language/APLS_0.1_ZH_CN_LANGUAGE_PROFILE.md`、`APLS_0.1_ZH_CN_GRAMMAR.ebnf` |
-| Canonical IR | APPROVED_CNL_DESIGN_INPUT_NOT_BASELINED | `04_design/ir/APLS_0.1_CNL_CANONICAL_IR.md`、`04_design/ir/apls-cnl-ir-0.1.schema.json` |
-| 编译器实现 | CNL_IMPLEMENTATION_C05_VERIFIED_COMMIT_ANCHORED_NOT_BASELINED | `07_src/`、Commit `3289037bee1aab64dfa2d58188379a68dcfa601e` |
-| 测试与一致性套件 | C05_VERIFIED_NOT_BASELINED | `06_test_design/APLS_0.1_CNL_IMPLEMENTATION_VERIFICATION_PLAN.md`、`11_validation/validation_reports/TASK020_C05_CNL_VERIFICATION.md` |
-| 总体架构 | CNL_CHANGE_INTEGRATED_NOT_BASELINED | `03_architecture/system_architecture.md` |
-| CNL 扩展架构 | UPDATED_BY_DEC017_NOT_BASELINED | `03_architecture/APLS_0.1_CONTROLLED_NATURAL_LANGUAGE_ARCHITECTURE.md` |
-| CNL 歧义边界 | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/language/APLS_0.1_CNL_AMBIGUITY_BOUNDARY.md` |
-| CNL Semantic Frame | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/language/APLS_0.1_SEMANTIC_FRAME_PROFILE.md` |
-| CNL 诊断目录 | APPROVED_INPUT_UPDATED_BY_DEC017_NOT_BASELINED | `04_design/diagnostics/APLS_0.1_CNL_DIAGNOSTICS.md` |
-| CNL Canonical IR | APPROVED_DESIGN_INPUT_BY_DEC019_NOT_BASELINED | `04_design/ir/APLS_0.1_CNL_CANONICAL_IR.md`、`04_design/ir/apls-cnl-ir-0.1.schema.json` |
-| 旧 DSL 语言与 IR 设计 | LEGACY_DSL_ONLY_OR_SUPERSEDED_BY_DEC014_DEC019 | `04_design/language/APLS_0.1_LANGUAGE_DESIGN.md`、`04_design/language/APLS_0.1_GRAMMAR.ebnf`、`04_design/ir/APLS_0.1_CANONICAL_IR.md`、`04_design/ir/apls-ir-0.1.schema.json`、`04_design/diagnostics/APLS_0.1_DIAGNOSTICS.md` |
+| 产品需求 | BASELINED（APLS-0.1-BASELINE-001；PRD-007 措辞经 DEC-031 Q2=B 修订） | `01_product_requirements/PRD.md`、`acceptance_criteria.md` |
+| 系统需求 | BASELINED（F-08 最小完备集：SYS-001～009 / NFR-001～006 / IF-001～003，追溯门禁 PASS） | `02_system_requirements/` |
+| 语言规范 | BASELINED | `04_design/language/APLS_0.1_ZH_CN_LANGUAGE_PROFILE.md`、`APLS_0.1_ZH_CN_GRAMMAR.ebnf` |
+| Canonical IR | BASELINED | `04_design/ir/APLS_0.1_CNL_CANONICAL_IR.md`、`04_design/ir/apls-cnl-ir-0.1.schema.json` |
+| 编译器实现 | BASELINED（Compiler 36 PASS/1 ignored、CLI 7 PASS/1 ignored、MSRV 1.86 核验通过） | `07_src/`、Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` |
+| 测试与一致性套件 | BASELINED | `06_test_design/`、`11_validation/validation_reports/` |
+| 总体架构 | BASELINED | `03_architecture/system_architecture.md` |
+| CNL 扩展架构 | BASELINED | `03_architecture/APLS_0.1_CONTROLLED_NATURAL_LANGUAGE_ARCHITECTURE.md` |
+| CNL 歧义边界 | BASELINED | `04_design/language/APLS_0.1_CNL_AMBIGUITY_BOUNDARY.md` |
+| CNL Semantic Frame | BASELINED | `04_design/language/APLS_0.1_SEMANTIC_FRAME_PROFILE.md` |
+| CNL 诊断目录 | BASELINED（含 E1404/E1405 与七码处置，经 DEC-031） | `04_design/diagnostics/APLS_0.1_CNL_DIAGNOSTICS.md` |
+| 旧 DSL 语言与 IR 设计 | LEGACY_DSL_ONLY_OR_SUPERSEDED_BY_DEC014_DEC019 | `04_design/language/APLS_0.1_LANGUAGE_DESIGN.md`、`APLS_0.1_GRAMMAR.ebnf`、`04_design/ir/APLS_0.1_CANONICAL_IR.md`、`apls-ir-0.1.schema.json`、`04_design/diagnostics/APLS_0.1_DIAGNOSTICS.md` |
 | 旧精确词法 Profile | SUPERSEDED_AS_PUBLIC_SURFACE | `04_design/language/APLS_0.1_LEXICAL_PROFILE.md` |
-| 名称解析与符号类别 Profile | SOURCE_FORM_REVIEW_REQUIRED | `04_design/language/APLS_0.1_NAME_RESOLUTION_PROFILE.md` |
-| Compiler MVP 详细设计 | FRONTEND_CHANGE_REVIEW_REQUIRED | `04_design/compiler/APLS_0.1_COMPILER_MVP_DESIGN.md` |
-| Compiler 实现技术决策 | ACCEPTED_DECISION_NOT_BASELINED | `03_architecture/architecture_decisions/ADR-APLS-001-compiler-implementation-stack.md` |
-| Compiler 实现基础设计 | APPROVED_INPUT_NOT_BASELINED | `04_design/compiler/APLS_0.1_IMPLEMENTATION_FOUNDATION_DESIGN.md` |
+| 名称解析与符号类别 Profile | LEGACY_REFERENCE（旧 DSL Source 形式；当前 CNL 术语/引用以 ZH_CN Profile 为准） | `04_design/language/APLS_0.1_NAME_RESOLUTION_PROFILE.md` |
+| Compiler MVP 详细设计 | BASELINED | `04_design/compiler/APLS_0.1_COMPILER_MVP_DESIGN.md` |
+| Compiler 实现技术决策 | BASELINED | `03_architecture/architecture_decisions/ADR-APLS-001-compiler-implementation-stack.md` |
+| Compiler 实现基础设计 | BASELINED | `04_design/compiler/APLS_0.1_IMPLEMENTATION_FOUNDATION_DESIGN.md` |
 | 当前决策 | CURRENT_SNAPSHOT | `DECISION_INDEX.md` |
 
 ## Baseline 成立条件

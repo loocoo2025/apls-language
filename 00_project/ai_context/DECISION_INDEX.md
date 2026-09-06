@@ -37,6 +37,7 @@
 | DEC-031 | 整改工作包批准与 F-02/F-06/F-04/F-08 方向 | 批准 `HDP-APLS-024` 全部推荐：`WP-APLS-C04-REMEDIATION-001` 作为整改依据；Q1=A（0.1 冻结最小直接冲突模型，REQUIRE×PROHIBIT 同 Canonical Condition + 同行为三元组拒绝，新码 `APLS-E1405`）；Q2=B（C01 修订 PRD-007 验收措辞与失败关闭设计一致，纯文档变更）；Q3=A（实现诊断目录 §1.1 封闭根因聚合 + 七码处置表）；Q4=A（建立最小完备集 AC-001～009/SYS-001～009/NFR-001～006/IF-001～003 并落盘 FORMAL_TRACE 边，追溯门禁 PASS 为完成条件）；Q4-a=否（PRD §6 不先补编号，NFR 行 Traces-From 用最直接相关 P0 需求 ID 并注明源自 §6）；分两批整改，不含 Commit/新 Anchor/Baseline/Release 授权 | APPROVED | 项目负责人 2026-09-06 明确“按照你推荐的来” | 2026-09-06 | TASK-024 批次 1/2 整改实施、公共语言收窄（E1405）、诊断目录与 PRD-007 文档变更、需求追溯层建立 |
 | DEC-032 | Rust 工具链安装授权 | 授权在本机安装 rustup + Rust 1.98.0（参考工具链）与 1.86.0（MSRV 核验），并允许 `cargo fetch/build/test --locked` 按 Cargo.lock 联网拉取精确锁定依赖；不授权变更依赖闭包、版本或 Lock | APPROVED | 项目负责人 2026-09-06 明确选择“授权安装 Rust 工具链” | 2026-09-06 | TASK-024 批次 1 实施与验证环境前提 |
 | DEC-033 | 整改收口三项裁决与新 Anchor | ① 接受 C01 对 `system_architecture.md` §8 的扩展修正（F-06 同根因）；② 授权修正 `APLS_0.1_ZH_CN_GRAMMAR.ebnf` 第 3 行过期状态注释（仅注释，不动语法产生式）；③ 参照 DEC-026 模式授权创建一个包含全部整改与治理落盘的新精确 Git Anchor 作为 Finding 关闭复审 Target；随后 C00 发起全新独立 C04 关闭复审；不含 Push/Baseline/Release/Formal Seal 授权 | APPROVED | 项目负责人 2026-09-06 明确选择“三项全部批准” | 2026-09-06 | TASK-024 收口、新 Review Target、Finding 关闭复审 |
+| DEC-034 | APLS 0.1 产品 Baseline Adoption 与远程同步 | 批准 `HDP-APLS-025`：Q1=A，采用精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993` 为 `APLS-0.1-BASELINE-001`（需求、语言规范、Canonical IR、编译器实现、测试与追溯层转为 CURRENT，版本摘除 draft 标记）；Q2=A，授权提交 Anchor 后治理回执为一个新 Commit 并将 `main` Push 到私有远程；不含 Release/Tag/Formal Seal/公开仓库授权 | APPROVED | 项目负责人 2026-09-06 明确回复 `HDP-APLS-025: APPROVED`（Q1=A/Q2=A） | 2026-09-06 | 产品 Baseline 成立、治理回执提交、私有远程同步 |
 
 ## 当前有效决定摘要
 
@@ -59,6 +60,7 @@
 - 候选冻结：`DEC-026` 已授权创建一个本地初始 Commit 作为当前 C05 PASS 候选的不可变 Git Anchor；该动作不授权 Push、正式 C04、Baseline 或 Release。
 - 远程与交接：`DEC-027` 授权 GitHub 私有同步和 Kimi C00 接管；这不构成 `HDP-APLS-022` 批准，Kimi C00 也不能在同一会话中冒充正式 C04。
 - 首次正式 C04：`DEC-028` 已批准 `HDP-APLS-022 Option A`；首次 Dispatch 中断后由 `DEC-029` 授权项目负责人手动新建干净会话执行，Target 与边界不变；Baseline Adoption 仍须另行裁决。
+- 产品 Baseline：`DEC-034` 已批准 `HDP-APLS-025`（Q1=A/Q2=A），`APLS-0.1-BASELINE-001` 成立于精确 Commit `fd8b59536fcdfdff2f3b199b882c15d97edb1993`；Release 与 Formal Seal 未授权。
 - 复审范围：`LEAN` 默认 `DELTA_ONLY`；已关闭且未变化、未受影响的事项继承结论，不因出现在完整 Target 中而重复审查。
 - 用户界面：用户默认不学习、不查看 DSL、AST 或 IR；只在主动检查/调试时展示 Normalized Meaning 或内部产物。
 - 详细设计：旧 Grammar、词法和 `apls-ir-0.1` 已被方向变更替代，仅保留为 Legacy DSL 参考；当前 CNL-to-IR 契约为 `apls-cnl-ir-0.1`。
